@@ -1,0 +1,18 @@
+{
+  "name": "Zuri Connect Africa",
+  "short_name": "Zuri",
+  "description": "Secure Supabase-backed fintech and telecom wallet for Africa.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#06110b",
+  "theme_color": "#21d07a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

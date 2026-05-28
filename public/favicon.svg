@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Zuri Connect Africa</title>
+  <desc id="desc">Green Zuri Connect Africa app icon</desc>
+  <rect width="128" height="128" rx="24" fill="#06110b"/>
+  <circle cx="64" cy="64" r="42" fill="#21d07a"/>
+  <path d="M37 45h54L55 83h38v13H35l36-38H37z" fill="#06110b"/>
+  <path d="M36 31h56v10H36z" fill="#d7ffe9"/>
+</svg>

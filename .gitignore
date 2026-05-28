@@ -1,0 +1,29 @@
+# Environment files — NEVER commit secrets.
+.env
+.env.local
+.env.*.local
+
+# Build artefacts.
+dist
+build
+.next
+
+# Dependencies.
+node_modules
+
+# Supabase local state.
+supabase/.temp
+supabase/.branches
+
+# Test / coverage output.
+coverage
+playwright-report
+test-results
+.vitest-cache
+
+# Logs and editor cruft.
+*.log
+.DS_Store
+.idea
+.vscode/*
+!.vscode/settings.json

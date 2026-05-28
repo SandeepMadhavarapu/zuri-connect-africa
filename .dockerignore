@@ -1,0 +1,16 @@
+node_modules
+dist
+coverage
+.git
+.github
+*.md
+# Never include local env files in Docker builds — secrets must come from runtime env or Supabase secrets.
+.env
+.env.local
+.env.*
+!.env.*.example
+supabase/.temp
+playwright-report
+test-results
+.vscode
+*.log
