@@ -368,6 +368,7 @@ N1 — CRITICAL: tests/security/auth-and-webhook.test.js line 2 imports verifyDa
 
 N2 — MEDIUM: fraud-analysis Edge Function is ORPHANED. Exposed via src/api/endpoints.js and src/services/fraudService.js, but no page calls fraudService. fraud_logs and risk_events will be empty.
 > RESOLVED 2025-11-05: fraud-analysis Edge Function and src/services/fraudService.js deleted (Prompt 2.3). Risk scoring path now has a single source of truth: _shared/risk-engine.ts.
+> FOLLOW-UP 2026-05-29: deployed instance of fraud-analysis also removed from Supabase via Prompt 3.4.5. Function is now gone in both source and deployment.
 
 N3 — MEDIUM: fraud-analysis is a PARALLEL RISK PATH. It contains its own evaluateRisk with similar but not identical weights to _shared/risk-engine.ts.
 > RESOLVED 2025-11-05: fraud-analysis Edge Function and src/services/fraudService.js deleted (Prompt 2.3). Risk scoring path now has a single source of truth: _shared/risk-engine.ts.
@@ -382,6 +383,8 @@ N7 — MEDIUM: "Powered by Zuri Behavioral Intelligence" under Scam Shield heade
 
 N8 — LOW: nginx.conf and vercel.json Permissions-Policy drift. nginx: microphone=(). vercel: microphone=(self). Align.
 > RESOLVED 2025-11-06: nginx.conf and vercel.json security headers aligned (Prompt 2.6). Both deployments now ship identical Permissions-Policy and CSP. See docs/SECURITY_HEADERS.md for the sync requirement.
+
+N9 (Resolved 2026-05-29 in Prompt 3.4.5): 'ai-router-' (with trailing dash) — orphan Edge Function with no source references, removed from Supabase.
 
 ### 23.3 Updated risk register additions
 
