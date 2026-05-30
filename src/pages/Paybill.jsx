@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, Zap, Droplets, Tv, Wifi, Home, CheckCircle2, Search, Info, Flag } from 'lucide-react';
@@ -10,6 +10,7 @@ import {
   waitForPaymentConfirmation,
   paymentStatusMessage,
 } from '@/services/paymentService.js';
+import { searchProviders } from '@/services/providerService.js';
 import { invokeEdgeFunction } from '@/api/client.js';
 import AuthGate from '@/components/security/AuthGate';
 import BiometricStepUpModal from '@/components/security/BiometricStepUpModal';
@@ -25,19 +26,20 @@ import {
   PRODUCTION_PAYMENT_HELPER_COPY,
 } from '@/lib/providerDirectory';
 
-// NOTE: every entry below is currently treated as an unverified sample.
-// The numeric `shortcode` is retained ONLY so the payment service can still
-// build an initiateServerPayment request shape. The user-facing UI MUST
-// render `getDirectoryDisplayCode(entry)`, never `entry.shortcode`, so users
-// never see a sample number presented as if it were a verified provider
-// number.
+// The provider directory backend is now live (Phase 3 complete).
+// The UI fetches verified providers from the provider-search Edge
+// Function. LOCAL_FALLBACK_BILLERS below is retained as a defensive
+// fallback if the API is unreachable. It will be removed once the
+// database has 5+ verified providers (Phase 3 follow-up).
+// Server-side rejection of unverified destinations IS active
+// (ZURI_REQUIRE_VERIFIED_PROVIDER=true in production). See
+// docs/PROVIDER_DIRECTORY_ACTIVATION.md.
 //
-// IMPORTANT: server-side rejection of unverified destinations is on the
-// roadmap (see AUDIT.md §24.1 — provider-search Edge Function + provider
-// gate in initiate-payment). It is NOT in place today. Until that ships,
-// the only thing preventing unverified-number payment is this client-side
-// guard.
-const popularBillers = [
+// LOCAL_FALLBACK_BILLERS: legacy hardcoded list. Only used as a
+// fallback when provider-search Edge Function fails. Will be
+// removed once 5+ verified providers exist in the database
+// (Phase 3 follow-up).
+const LOCAL_FALLBACK_BILLERS = [
   {
     id: 1, name: 'Kenya Power', shortcode: '888880', icon: Zap,
     color: 'text-yellow-400', bg: 'bg-yellow-400/10', category: 'Utilities',
@@ -88,6 +90,43 @@ const popularBillers = [
   },
 ];
 
+function iconForCategory(category = '') {
+  const c = category.toLowerCase();
+  if (c.includes('power') || c.includes('electric') || c.includes('kplc') || c.includes('token'))
+    return { icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10' };
+  if (c.includes('water'))
+    return { icon: Droplets, color: 'text-blue-400', bg: 'bg-blue-400/10' };
+  if (c.includes('internet') || c.includes('fibre') || c.includes('isp') || c.includes('wifi'))
+    return { icon: Wifi, color: 'text-primary', bg: 'bg-primary/10' };
+  if (c.includes('tv') || c.includes('dstv') || c.includes('entertain'))
+    return { icon: Tv, color: 'text-purple-400', bg: 'bg-purple-400/10' };
+  if (c.includes('government') || c.includes('county') || c.includes('rate'))
+    return { icon: Home, color: 'text-orange-400', bg: 'bg-orange-400/10' };
+  return { icon: CreditCard, color: 'text-primary', bg: 'bg-primary/10' };
+}
+
+function normalizeProviderResult(result) {
+  const { icon, color, bg } = iconForCategory(result.provider_category);
+  return {
+    id: result.provider_id,
+    name: result.provider_name,
+    category: result.provider_category,
+    shortcode: result.shortcode,
+    icon,
+    color,
+    bg,
+    verificationStatus: 'verified',
+    sourceRequired: false,
+    lastVerifiedAt: result.last_verified_at,
+    productionStatus: 'staging_ready',
+    reportWrongNumberEnabled: true,
+    displayCode: result.shortcode,
+    accountReferenceLabel: result.account_reference_label,
+    accountReferenceFormat: result.account_reference_format,
+    _fromApi: true,
+  };
+}
+
 export default function Paybill() {
   const { user } = useAuth();
   const SENDER_PHONE = resolveLedgerIdentityWithFallback(user);
@@ -104,18 +143,45 @@ export default function Paybill() {
   const [serverStepUp, setServerStepUp] = useState(null);
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState('');
+  const [directoryEntries, setDirectoryEntries] = useState(LOCAL_FALLBACK_BILLERS);
+  const [loading,          setLoading]          = useState(false);
+  const [searchError,      setSearchError]      = useState(null);
 
-  // Search by provider name only. Searching unverified samples by their numeric
-  // `shortcode` would imply those numbers are an addressable directory — they
-  // are not. Verified-production entries (future) may opt-in to numeric search
-  // via getDirectoryDisplayCode().
-  const filtered = popularBillers.filter(b => {
-    const term = search.toLowerCase();
-    if (!term) return true;
-    if (b.name.toLowerCase().includes(term)) return true;
-    if (isVerifiedProductionEntry(b) && String(b.shortcode || '').includes(search)) return true;
-    return false;
-  });
+  useEffect(() => {
+    let cancelled = false;
+    const delay = search.length > 0 ? 300 : 0;
+    setLoading(true);
+
+    const timer = setTimeout(async () => {
+      const result = await searchProviders(search, 'paybill', 10);
+      if (cancelled) return;
+
+      if (result.error) {
+        const term = search.toLowerCase();
+        const fallback = term
+          ? LOCAL_FALLBACK_BILLERS.filter(b =>
+              b.name.toLowerCase().includes(term) ||
+              (isVerifiedProductionEntry(b) && String(b.shortcode || '').includes(search))
+            )
+          : LOCAL_FALLBACK_BILLERS;
+        setDirectoryEntries(fallback);
+        setSearchError(
+          result.error === 'rate_limited'
+            ? 'Search rate-limited. Showing offline list.'
+            : 'Showing offline list — provider search is temporarily unavailable.',
+        );
+      } else {
+        setDirectoryEntries(result.results.map(normalizeProviderResult));
+        setSearchError(null);
+      }
+      setLoading(false);
+    }, delay);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [search]);
 
   const finalizeRecord = (ref) => {
     recordLedgerDebit({
@@ -362,9 +428,14 @@ export default function Paybill() {
               />
             </div>
 
-            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-3">Popular Billers · sample directory</p>
+            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-3">
+              {searchError ? 'Popular Billers · offline list' : 'Verified Providers · provider directory'}
+            </p>
+            {searchError && (
+              <p className="text-[10px] text-amber-500 mb-2 px-1">{searchError}</p>
+            )}
             <div className="flex flex-col gap-2">
-              {filtered.map(biller => {
+              {directoryEntries.map(biller => {
                 const Icon = biller.icon;
                 return (
                   <motion.button
@@ -382,9 +453,15 @@ export default function Paybill() {
                         {getDirectoryDisplayCode(biller)} · {biller.category}
                       </p>
                     </div>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-500 border border-amber-400/20 whitespace-nowrap">
-                      Unverified sample
-                    </span>
+                    {isVerifiedProductionEntry(biller) ? (
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-green-400/10 text-green-500 border border-green-400/20 whitespace-nowrap">
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-500 border border-amber-400/20 whitespace-nowrap">
+                        Unverified sample
+                      </span>
+                    )}
                   </motion.button>
                 );
               })}
@@ -408,9 +485,15 @@ export default function Paybill() {
                         Paybill: {getDirectoryDisplayCode(selected)}
                       </p>
                     </div>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-500 border border-amber-400/20 whitespace-nowrap">
-                      Unverified sample
-                    </span>
+                    {isVerifiedProductionEntry(selected) ? (
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-green-400/10 text-green-500 border border-green-400/20 whitespace-nowrap">
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-500 border border-amber-400/20 whitespace-nowrap">
+                        Unverified sample
+                      </span>
+                    )}
                   </div>
                   <div className="mb-5 rounded-xl border border-amber-400/15 bg-amber-400/6 px-3 py-2 flex items-start gap-2">
                     <Info size={11} className="text-amber-500 mt-0.5 shrink-0" />
