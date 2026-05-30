@@ -1,23 +1,12 @@
-/**
- * Zuri Connect Africa — Adaptive Risk Engine v2
- *
- * Unified risk scoring that combines:
- *   - Transaction parameters (amount, recipient, type)
- *   - Device trust state (fingerprint, trusted registry)
- *   - SIM-swap signals (from simSwapDetector)
- *   - Behavioral signals (velocity, failures)
- *
- * Returns a structured RiskResult with:
- *   - riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
- *   - score: 0–100
- *   - requiredAuth: ordered auth steps
- *   - factors: human-readable reason strings
- *   - holdTransaction: boolean — freeze funds pending verification
- */
+// Client-side risk computation is intentionally MINIMAL. Real risk
+// scoring happens server-side in initiate-payment via
+// _shared/risk-engine.ts. The localStorage-based reputation overlay
+// from src/backend/fraud was removed in Phase 5.2 (Prompt 5.2).
+// This file now only does pre-flight client-side hints (UX) —
+// the server's risk_decision is the source of truth.
 
 import { evaluateSimSwapRisk, RISK_LEVEL } from './simSwapDetector';
 import { isCurrentDeviceTrusted, getRiskHistory } from './deviceTrust';
-import { evaluateAdaptiveFraudEscalation } from '@/backend/fraud/adaptiveEscalation';
 
 // ── Transaction signal weights ────────────────────────────────────────────────
 
@@ -139,22 +128,6 @@ export function evaluateRisk({
     factors.push('Elevated risk activity detected in the last 30 minutes');
   }
 
-  let adaptiveFraud = null;
-  try {
-    adaptiveFraud = evaluateAdaptiveFraudEscalation({
-      amount,
-      recipient,
-      txPattern: actionType,
-      velocity: failedAttempts,
-    });
-    score += adaptiveFraud.deviceRisk?.fraudSensitivityBump || 0;
-    score += adaptiveFraud.sharedThreat?.sensitivityBump || 0;
-    score += Math.round((adaptiveFraud.reputation?.riskScore || 0) * 0.35);
-    adaptiveFraud.reasons?.forEach(reason => factors.push(`Fraud intelligence: ${reason}`));
-  } catch (err) {
-    console.warn('[RiskEngine] Adaptive fraud escalation unavailable:', err?.message);
-  }
-
   // ── SIM-swap / device integrity check ─────────────────────────────────
   let simSwapResult = null;
   if (!skipSimSwapCheck) {
@@ -181,7 +154,6 @@ export function evaluateRisk({
     factors,
     holdTransaction,
     simSwapResult,
-    adaptiveFraud,
     // Legacy compat
     deviceTrusted,
   };

@@ -16,6 +16,7 @@ export const ADMIN_ROLES = Object.freeze({
   ADMIN:         'admin',
   AUDITOR:       'auditor',
   FRAUD_ANALYST: 'fraud_analyst',
+  OPERATOR:      'operator',
   SUPPORT:       'support',
 });
 

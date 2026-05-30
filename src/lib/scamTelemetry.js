@@ -4,7 +4,11 @@
  * Raw scores are NEVER stored or exposed publicly.
  */
 
-import { recordThreatSignal } from '@/backend/fraud/threatIntel';
+// Client-side threat signal recording is intentionally a no-op. Real threat
+// signals live in security_events (written by the initiate-payment Edge Function).
+// Phase 6 will rewire getRecentThreats to query security_events via Supabase.
+// deno-lint-ignore no-unused-vars
+function recordThreatSignal() {}
 
 const STORAGE_KEY = '_zca_telemetry';
 const MAX_EVENTS = 100;

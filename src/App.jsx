@@ -42,7 +42,6 @@ import GlobalErrorBoundary from './components/system/GlobalErrorBoundary';
 import DiagnosticsBadge from './components/system/DiagnosticsBadge';
 import { logRouteAudit } from './lib/routeAudit';
 import { validateAppState } from './lib/appValidation';
-import { startRuntimeHealthMonitor, startStartupWatchdog } from '@/backend/observability';
 
 function BootLoadingScreen() {
   const statusLines = [
@@ -118,12 +117,6 @@ function AuthenticatedApp() {
     if (import.meta.env.DEV && validation.issues?.length) {
       console.table(validation.issues);
     }
-    const stopWatchdog = startStartupWatchdog();
-    const stopMonitor = startRuntimeHealthMonitor({ intervalMs: 30000 });
-    return () => {
-      stopWatchdog?.();
-      stopMonitor?.();
-    };
   }, [authChecked]);
 
   useEffect(() => {
