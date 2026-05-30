@@ -1,205 +1,395 @@
 /**
- * Zuri Connect Africa — Admin Security Dashboard (Fraud Ops Center)
- * Requires fraud_analyst or admin role. Dark glass-card premium design.
+ * Admin Security Dashboard — SOC strategic overview (6 panels).
+ * Data source: admin-soc-readonly Edge Function (Phase 5.2).
+ * Role guard: fraud_analyst, admin, auditor, operator.
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence }          from 'framer-motion';
-import { useNavigate }                      from 'react-router-dom';
-import {
-  ShieldAlert, ShieldCheck, Activity, AlertTriangle,
-  RefreshCw, Clock, Cpu, Layers,
-  CheckCircle2, XCircle, RotateCcw, ChevronRight, Lock, Info,
-} from 'lucide-react';
-
-import { useAuth }              from '@/lib/AuthContext';
+import { RefreshCw, Lock, Info, AlertCircle } from 'lucide-react';
+import { useAuth }               from '@/lib/AuthContext';
 import { canViewFraudDashboard } from '@/lib/rbac';
-import { getAuditLog, SEVERITY, AUDIT_ACTIONS } from '@/lib/auditLogger';
-import { getAllSettlements, SETTLEMENT_STATUS }  from '@/lib/settlementEngine';
-import { getQueueStats, getDeadLetterJobs, QUEUES } from '@/lib/queue';
-import { getDeviceInfo }                          from '@/lib/deviceTrust';
-import { getMetrics, METRICS }                   from '@/lib/observability';
-import { retryFailed as retryFailedSettlements } from '@/api/settlement';
+import { fetchAdminSocSnapshot } from '@/services/adminSocService';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function useDashboardData() {
-  const [data,    setData]    = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const refresh = useCallback(() => {
-    setLoading(true);
-
-    const auditLog    = getAuditLog();
-     const settlements = Object.values(getAllSettlements());
-     const qStats      = getQueueStats(QUEUES.SETTLEMENT);
-     const dlq         = getDeadLetterJobs();
-     const metrics     = getMetrics();
-     const deviceInfo  = getDeviceInfo();
-     const deviceRisk  = { deviceRisk: deviceInfo.isTrusted ? 'low' : 'medium', riskReason: 'Admin device' };
-
-    const fraudAlerts = auditLog.filter(e =>
-      e.severity === SEVERITY.HIGH || e.severity === SEVERITY.CRITICAL
-    ).slice(-20).reverse();
-
-    const authFailures = auditLog.filter(e => e.action === AUDIT_ACTIONS.AUTH_FAILED).slice(-10).reverse();
-
-    const settledCount = settlements.filter(s => s.settlementStatus === SETTLEMENT_STATUS.SETTLED).length;
-    const failedCount  = settlements.filter(s => s.settlementStatus === SETTLEMENT_STATUS.FAILED).length;
-    const pendingCount = settlements.filter(s => s.settlementStatus === SETTLEMENT_STATUS.PENDING).length;
-    const failureRate  = settlements.length > 0
-      ? Math.round((failedCount / settlements.length) * 100)
-      : 0;
-
-    const lastRecon = auditLog
-      .filter(e => e.action === AUDIT_ACTIONS.RECONCILIATION_EXECUTED)
-      .slice(-1)[0] || null;
-
-    setData({
-      fraudAlerts,
-      authFailures,
-      settlements: { settled: settledCount, failed: failedCount, pending: pendingCount, failureRate, total: settlements.length },
-      queue:       { ...qStats, dlqCount: dlq.length },
-      metrics,
-      deviceRisk,
-      lastRecon,
-      lastUpdated: Date.now(),
-    });
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    refresh();
-    const t = setInterval(refresh, 15000);
-    return () => clearInterval(t);
-  }, [refresh]);
-
-  return { data, loading, refresh };
+function relativeTime(ts) {
+  if (!ts) return '—';
+  const s = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+  if (s < 60)    return `${s}s ago`;
+  if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function MetricCard({ icon: Icon, label, value, sub, color = 'text-primary', accent = 'border-primary/15' }) {
-  return (
-    <div className={`glass-card rounded-2xl p-4 border ${accent}`}>
-      <div className="flex items-center gap-2 mb-2">
-        <Icon size={13} className={color} />
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{label}</span>
-      </div>
-      <p className={`font-grotesk font-bold text-xl ${color}`}>{value}</p>
-      {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
-    </div>
-  );
+function Dot({ level }) {
+  const cls =
+    level === 'green' ? 'bg-green-400' :
+    level === 'amber' ? 'bg-amber-400' :
+                        'bg-red-400';
+  return <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${cls}`} />;
 }
 
-function SeverityBadge({ severity }) {
-  const map = {
-    [SEVERITY.CRITICAL]: 'bg-red-400/15 text-red-400 border-red-400/25',
-    [SEVERITY.HIGH]:     'bg-amber-400/15 text-amber-400 border-amber-400/25',
-    [SEVERITY.MEDIUM]:   'bg-blue-400/15 text-blue-400 border-blue-400/25',
-    [SEVERITY.LOW]:      'bg-primary/10 text-primary border-primary/20',
-  };
-  return (
-    <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border ${map[severity] || map[SEVERITY.LOW]}`}>
-      {severity}
-    </span>
-  );
-}
+// ── Panel shell ───────────────────────────────────────────────────────────────
+// data === null      → role-restricted (show locked card)
+// data === undefined → error / not loaded (show "No data")
+// data === object    → render children
 
-function FraudFeed({ alerts }) {
-  if (!alerts?.length) {
+function PanelShell({ title, tooltip, data, children }) {
+  if (data === null) {
     return (
-      <div className="flex flex-col items-center py-8 gap-2">
-        <ShieldCheck size={24} className="text-primary opacity-50" />
-        <p className="text-xs text-muted-foreground">No high-severity events</p>
+      <div className="glass-card rounded-xl border border-white/6 px-4 py-3 flex items-center gap-2 min-h-[72px]">
+        <Lock size={11} className="text-muted-foreground shrink-0" />
+        <span className="text-[11px] text-muted-foreground">
+          Restricted — admin or auditor required
+        </span>
       </div>
     );
   }
   return (
-    <div className="space-y-2">
-      {alerts.map((entry, i) => (
-        <motion.div key={entry.entryId || i}
-          initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.03 }}
-          className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-white/3 border border-white/5"
-        >
-          <AlertTriangle size={12} className={entry.severity === SEVERITY.CRITICAL ? 'text-red-400 mt-0.5' : 'text-amber-400 mt-0.5'} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <p className="text-[11px] font-medium text-foreground capitalize">
-                {entry.action?.replace(/_/g, ' ')}
-              </p>
-              <SeverityBadge severity={entry.severity} />
-            </div>
-            <p className="text-[10px] text-muted-foreground truncate">
-              {entry.userId} · {new Date(entry.epochMs).toLocaleTimeString()}
-            </p>
-          </div>
-        </motion.div>
-      ))}
+    <div className="glass-card rounded-xl border border-white/6 p-4 flex flex-col gap-3">
+      <div className="flex items-center gap-1.5">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground flex-1">
+          {title}
+        </p>
+        {tooltip && (
+          <Info
+            size={10}
+            className="text-muted-foreground/50 cursor-default shrink-0"
+            title={tooltip}
+          />
+        )}
+      </div>
+      {data === undefined
+        ? <p className="text-[11px] text-muted-foreground">No data</p>
+        : children}
     </div>
   );
 }
 
-function SettlementMonitor({ settlements, onRetry, retrying }) {
+// ── Panel 1 — System Health ───────────────────────────────────────────────────
+
+function Panel1({ data }) {
+  const auditN = data?.audit_critical_24h       ?? 0;
+  const rate   = data?.webhook_success_rate_24h;
+  const recon  = data?.last_reconciliation;
+
+  const auditLevel   = auditN === 0 ? 'green' : auditN < 5 ? 'amber' : 'red';
+  const webhookLevel = rate == null ? 'amber' : rate >= 99 ? 'green' : rate >= 95 ? 'amber' : 'red';
+
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-2">
+    <PanelShell
+      title="SYSTEM HEALTH"
+      tooltip="Critical audit events, webhook success rate, and most recent reconciliation run (24h)."
+      data={data}
+    >
+      <div className="space-y-1">
+        <div className="flex items-center justify-between h-8">
+          <span className="text-[11px] text-muted-foreground">Audit critical (24h)</span>
+          <div className="flex items-center gap-2">
+            <span className="font-grotesk font-bold text-xl text-foreground">{auditN}</span>
+            <Dot level={auditLevel} />
+          </div>
+        </div>
+        <div className="flex items-center justify-between h-8">
+          <span className="text-[11px] text-muted-foreground">Webhook success rate (24h)</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-sm text-foreground">
+              {rate != null ? `${rate}%` : '—'}
+            </span>
+            <Dot level={webhookLevel} />
+          </div>
+        </div>
+        <div className="pt-1.5 border-t border-white/5 space-y-0.5">
+          {recon ? (
+            <>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] text-muted-foreground">Last reconciliation</span>
+                <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border ${
+                  recon.status === 'completed'
+                    ? 'text-green-400 border-green-400/25 bg-green-400/8'
+                    : recon.status === 'running'
+                    ? 'text-amber-400 border-amber-400/25 bg-amber-400/8'
+                    : 'text-red-400 border-red-400/25 bg-red-400/8'
+                }`}>{recon.status}</span>
+              </div>
+              <p className="font-mono text-[10px] text-muted-foreground truncate">{recon.run_id}</p>
+              <p className="text-[10px] text-muted-foreground">{relativeTime(recon.started_at)}</p>
+            </>
+          ) : (
+            <p className="text-[10px] text-muted-foreground">No reconciliation run recorded</p>
+          )}
+        </div>
+      </div>
+    </PanelShell>
+  );
+}
+
+// ── Panel 2 — Webhook Health ──────────────────────────────────────────────────
+
+function Panel2({ data }) {
+  const hours  = data?.hourly_breakdown ?? [];
+  const replay = data?.replay_attempts  ?? 0;
+  const maxN   = Math.max(1, ...hours.map((h) => h.ingested));
+
+  return (
+    <PanelShell
+      title="WEBHOOK HEALTH (24H)"
+      tooltip="Hourly webhook ingestion and success rate. Each bar = one hour. Green = 100%, amber = 95-99%, red < 95%."
+      data={data}
+    >
+      {hours.length === 0 ? (
+        <p className="text-[11px] text-muted-foreground">No webhook events in 24h</p>
+      ) : (
+        <div className="flex items-end gap-px h-8 rounded overflow-hidden">
+          {hours.map((h, i) => {
+            const heightPct  = Math.max(8, Math.round((h.ingested / maxN) * 100));
+            const successRate = h.ingested > 0 ? (h.success / h.ingested) * 100 : 100;
+            const barColor =
+              successRate >= 100 ? 'bg-green-400/70' :
+              successRate >= 95  ? 'bg-amber-400/70' :
+                                   'bg-red-400/70';
+            return (
+              <div
+                key={i}
+                className={`flex-1 rounded-sm ${barColor}`}
+                style={{ height: `${heightPct}%` }}
+                title={`${h.hour_bucket?.slice(11, 13) ?? i}:00 — ${h.ingested} events, ${Math.round(successRate)}% success`}
+              />
+            );
+          })}
+        </div>
+      )}
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+        <span>oldest → newest</span>
+        <span>
+          Replay attempts:{' '}
+          <span className={replay > 0 ? 'text-amber-400 font-semibold' : 'text-foreground tabular-nums'}>
+            {replay}
+          </span>
+        </span>
+      </div>
+    </PanelShell>
+  );
+}
+
+// ── Panel 3 — Risk Engine Trend ───────────────────────────────────────────────
+
+function Panel3({ data }) {
+  const hours   = data?.hourly      ?? [];
+  const avg     = data?.avg_risk_score_24h;
+  const reasons = data?.top_reasons ?? [];
+
+  const totals = hours.reduce(
+    (acc, h) => ({
+      block:   acc.block   + h.block,
+      step_up: acc.step_up + h.step_up,
+      allow:   acc.allow   + h.allow,
+    }),
+    { block: 0, step_up: 0, allow: 0 },
+  );
+  const totalN = totals.block + totals.step_up + totals.allow || 1;
+
+  return (
+    <PanelShell
+      title="RISK ENGINE TREND (24H)"
+      tooltip="Risk engine decisions over 24 hours. Block/Step-up/Allow counts and top block reason codes."
+      data={data}
+    >
+      {/* Stacked proportion bar */}
+      <div className="h-2 rounded-full overflow-hidden flex">
+        <div
+          className="bg-red-400/70"
+          style={{ width: `${(totals.block / totalN) * 100}%` }}
+          title={`Block: ${totals.block}`}
+        />
+        <div
+          className="bg-amber-400/70"
+          style={{ width: `${(totals.step_up / totalN) * 100}%` }}
+          title={`Step-up: ${totals.step_up}`}
+        />
+        <div className="flex-1 bg-green-400/20" title={`Allow: ${totals.allow}`} />
+      </div>
+
+      {/* 3-column decision counts */}
+      <div className="grid grid-cols-3 text-center gap-1">
         {[
-          { label: 'Settled',  value: settlements.settled,  color: 'text-primary' },
-          { label: 'Pending',  value: settlements.pending,  color: 'text-amber-400' },
-          { label: 'Failed',   value: settlements.failed,   color: 'text-red-400' },
-        ].map(s => (
-          <div key={s.label} className="glass-card rounded-xl p-3 text-center border border-white/5">
-            <p className={`font-grotesk font-bold text-lg ${s.color}`}>{s.value}</p>
-            <p className="text-[10px] text-muted-foreground">{s.label}</p>
+          { label: 'Block',   value: totals.block,   color: 'text-red-400'   },
+          { label: 'Step-up', value: totals.step_up, color: 'text-amber-400' },
+          { label: 'Allow',   value: totals.allow,   color: 'text-green-400' },
+        ].map(({ label, value, color }) => (
+          <div key={label}>
+            <p className={`font-grotesk font-bold text-lg ${color}`}>{value}</p>
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">{label}</p>
           </div>
         ))}
       </div>
-      {settlements.failed > 0 && (
-        <button onClick={onRetry} disabled={retrying}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-400/8 border border-amber-400/20 text-amber-400 text-xs font-semibold disabled:opacity-50">
-          {retrying
-            ? <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}><RefreshCw size={12} /></motion.div> Retrying…</>
-            : <><RotateCcw size={12} /> Retry {settlements.failed} failed</>
-          }
-        </button>
+
+      <p className="text-[10px] text-muted-foreground">
+        Avg risk score:{' '}
+        <span className="font-mono text-foreground">{avg != null ? avg : '—'}</span>
+      </p>
+
+      {reasons.length > 0 && (
+        <div className="space-y-1 border-t border-white/5 pt-1">
+          {reasons.map((r) => (
+            <div key={r.reason_code} className="flex items-center justify-between">
+              <span className="font-mono text-[9px] text-muted-foreground">{r.reason_code}</span>
+              <span className="text-[9px] text-foreground font-semibold tabular-nums">{r.count}</span>
+            </div>
+          ))}
+        </div>
       )}
-    </div>
+    </PanelShell>
   );
 }
 
-function QueueMonitor({ queue }) {
-  const items = [
-    { label: 'Pending',    value: queue.pending,    color: 'text-amber-400' },
-    { label: 'Processing', value: queue.processing, color: 'text-blue-400' },
-    { label: 'Completed',  value: queue.completed,  color: 'text-primary' },
-    { label: 'Dead Letter',value: queue.dlqCount,   color: 'text-red-400' },
-  ];
+// ── Panel 4 — Payment Flow Health ────────────────────────────────────────────
+
+function Panel4({ data }) {
+  const stale  = data?.stale_pending_count ?? 0;
+  const review = data?.manual_review_count ?? 0;
+
+  const staleLevel  = stale  === 0 ? 'green' : stale  < 10 ? 'amber' : 'red';
+  const reviewLevel = review <  5  ? 'green' : review < 20 ? 'amber' : 'red';
+
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {items.map(item => (
-        <div key={item.label} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/3 border border-white/5">
-          <div className={`w-1.5 h-1.5 rounded-full ${item.value > 0 ? 'bg-current' : 'bg-muted'} ${item.color}`} />
-          <div>
-            <p className={`font-grotesk font-semibold text-sm ${item.color}`}>{item.value}</p>
-            <p className="text-[9px] text-muted-foreground">{item.label}</p>
-          </div>
+    <PanelShell
+      title="PAYMENT FLOW HEALTH"
+      tooltip="Stale pending payments (>10 min without resolution) and manual review queue depth."
+      data={data}
+    >
+      <div className="flex items-center justify-between h-10">
+        <span className="text-[11px] text-muted-foreground">Stale pending</span>
+        <div className="flex items-center gap-2">
+          <span className="font-grotesk font-bold text-2xl text-foreground">{stale}</span>
+          <Dot level={staleLevel} />
         </div>
-      ))}
-    </div>
+      </div>
+      <div className="flex items-center justify-between h-10">
+        <span className="text-[11px] text-muted-foreground">Manual review queue</span>
+        <div className="flex items-center gap-2">
+          <span className="font-grotesk font-bold text-2xl text-foreground">{review}</span>
+          <Dot level={reviewLevel} />
+        </div>
+      </div>
+    </PanelShell>
+  );
+}
+
+// ── Panel 5 — Scam Shield Signals ────────────────────────────────────────────
+
+function Panel5({ data }) {
+  const auth     = data?.auth_failures_24h    ?? 0;
+  const simSwap  = data?.sim_swap_signals_24h ?? 0;
+  const critical = data?.critical_24h         ?? 0;
+
+  const stats = [
+    { label: 'Auth failures', value: auth,     level: auth === 0 ? 'green' : auth < 10 ? 'amber' : 'red' },
+    { label: 'SIM swap',      value: simSwap,  level: simSwap  === 0 ? 'green' : simSwap  < 3 ? 'amber' : 'red' },
+    { label: 'Critical',      value: critical, level: critical === 0 ? 'green' : critical < 5 ? 'amber' : 'red' },
+  ];
+
+  return (
+    <PanelShell
+      title="SCAM SHIELD SIGNALS"
+      tooltip="Auth failures, SIM-swap detections, and critical security events in the past 24 hours."
+      data={data}
+    >
+      <div className="grid grid-cols-3 gap-2">
+        {stats.map(({ label, value, level }) => (
+          <div key={label} className="flex flex-col items-center gap-1 py-1">
+            <div className="flex items-center gap-1">
+              <span className="font-grotesk font-bold text-xl text-foreground">{value}</span>
+              <Dot level={level} />
+            </div>
+            <span className="text-[9px] text-muted-foreground text-center leading-tight">{label}</span>
+          </div>
+        ))}
+      </div>
+    </PanelShell>
+  );
+}
+
+// ── Panel 6 — Provider Directory Health ──────────────────────────────────────
+
+function Panel6({ data }) {
+  const verified   = data?.verified_count            ?? 0;
+  const unverified = data?.unverified_count          ?? 0;
+  const reports    = data?.open_wrong_number_reports ?? 0;
+  const total      = verified + unverified || 1;
+  const verifiedPct = Math.round((verified / total) * 100);
+  const reportLevel = reports === 0 ? 'green' : reports < 5 ? 'amber' : 'red';
+
+  return (
+    <PanelShell
+      title="PROVIDER DIRECTORY HEALTH"
+      tooltip="Verification coverage for payment methods and open wrong-number dispute reports."
+      data={data}
+    >
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="text-muted-foreground">Verified</span>
+          <span className="font-mono text-green-400 font-semibold tabular-nums">{verified}</span>
+        </div>
+        <div className="h-1.5 rounded-full overflow-hidden bg-white/5">
+          <div
+            className="h-full bg-green-400/60 rounded-full"
+            style={{ width: `${verifiedPct}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="text-muted-foreground">Unverified</span>
+          <span className="font-mono text-muted-foreground tabular-nums">{unverified}</span>
+        </div>
+      </div>
+      <div className="flex items-center justify-between pt-2 border-t border-white/5">
+        <span className="text-[11px] text-muted-foreground">Open wrong-number reports</span>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-sm text-foreground tabular-nums">{reports}</span>
+          <Dot level={reportLevel} />
+        </div>
+      </div>
+    </PanelShell>
   );
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AdminSecurityDashboard() {
-  const { user }             = useAuth();
-  const navigate             = useNavigate();
-  const { data, loading, refresh } = useDashboardData();
-  const [retrying, setRetrying]    = useState(false);
+  const { user } = useAuth();
 
-  // RBAC guard
+  const [snapshot,      setSnapshot]      = useState(null);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const result = await fetchAdminSocSnapshot([
+      'panel_1_system_health',
+      'panel_2_webhook_health_24h',
+      'panel_3_risk_trend_24h',
+      'panel_4_payment_flow',
+      'panel_5_scam_signals',
+      'panel_6_provider_health',
+    ]);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setSnapshot(result);
+      setError(null);
+      setLastUpdatedAt(Date.now());
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 30_000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  // RBAC guard (after hooks — React rules of hooks require unconditional hook calls above)
   if (user && !canViewFraudDashboard(user)) {
     return (
       <div className="flex flex-col items-center justify-center h-full px-6 py-12">
@@ -214,185 +404,81 @@ export default function AdminSecurityDashboard() {
     );
   }
 
-  const handleRetry = async () => {
-    setRetrying(true);
-    try { await retryFailedSettlements(user?.email); } catch {}
-    refresh();
-    setRetrying(false);
-  };
+  const panels = snapshot?.panels ?? {};
+  const ageSecs = lastUpdatedAt
+    ? Math.floor((Date.now() - lastUpdatedAt) / 1000)
+    : null;
+  const freshnessColor =
+    ageSecs == null  ? 'bg-muted-foreground' :
+    ageSecs < 45     ? 'bg-green-400 animate-pulse' :
+                       'bg-amber-400';
 
   return (
     <div className="px-4 py-4 pb-10 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-foreground font-grotesk">Fraud Ops Center</h1>
-          <p className="text-[11px] text-muted-foreground">
-            {data?.lastUpdated ? `Updated ${new Date(data.lastUpdated).toLocaleTimeString()}` : 'Loading…'}
-          </p>
+        <h1 className="text-sm font-bold text-foreground font-grotesk uppercase tracking-wider">
+          Security Ops — Strategic Overview
+        </h1>
+        <div className="flex items-center gap-2.5">
+          {lastUpdatedAt && (
+            <div className="flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${freshnessColor}`} />
+              <span className="font-mono text-[10px] text-muted-foreground">
+                Last updated: {relativeTime(lastUpdatedAt)}
+              </span>
+            </div>
+          )}
+          <button
+            onClick={load}
+            disabled={loading}
+            className="w-7 h-7 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center disabled:opacity-40"
+            title="Refresh now"
+          >
+            <RefreshCw
+              size={11}
+              className={`text-muted-foreground ${loading ? 'animate-spin' : ''}`}
+            />
+          </button>
         </div>
-        <button onClick={refresh} disabled={loading}
-          className="w-8 h-8 rounded-xl bg-white/5 border border-white/8 flex items-center justify-center">
-          <motion.div animate={loading ? { rotate: 360 } : {}} transition={{ repeat: loading ? Infinity : 0, duration: 1, ease: 'linear' }}>
-            <RefreshCw size={13} className="text-muted-foreground" />
-          </motion.div>
-        </button>
       </div>
 
-      {/* Data-scope banner — session telemetry */}
-      <div
-        className="glass-card rounded-xl px-3 py-2 flex items-start gap-2"
-        style={{ borderColor: 'rgba(255,255,255,0.08)' }}
-      >
-        <Info size={11} className="text-muted-foreground shrink-0 mt-0.5" />
-        <p className="text-[10px] text-muted-foreground leading-relaxed">
-          Session telemetry — signals reflect this browser session&apos;s audit log and settlement queue.
-          Production deployment streams from Supabase aggregations.
-        </p>
-      </div>
+      {/* Error banner */}
+      {error && (
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-red-400/8 border border-red-400/20">
+          <AlertCircle size={12} className="text-red-400 shrink-0" />
+          <span className="text-[11px] text-red-400 flex-1">
+            Failed to load: <span className="font-mono">{error}</span>
+          </span>
+          <button onClick={load} className="text-[10px] text-red-400 underline ml-2">
+            Retry
+          </button>
+        </div>
+      )}
 
-      {loading && !data ? (
+      {/* Initial loading state */}
+      {loading && !snapshot && !error && (
         <div className="flex items-center justify-center py-16">
-          <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      ) : (
-        <AnimatePresence>
-          <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+      )}
 
-            {/* System Health Row */}
-            <div className="grid grid-cols-2 gap-3">
-              <MetricCard
-                icon={Activity}
-                label="Failure Rate"
-                value={`${data?.settlements.failureRate ?? 0}%`}
-                sub={`${data?.settlements.total || 0} total settlements`}
-                color={data?.settlements.failureRate > 10 ? 'text-red-400' : 'text-primary'}
-                accent={data?.settlements.failureRate > 10 ? 'border-red-400/15' : 'border-primary/15'}
-              />
-              <MetricCard
-                icon={Layers}
-                label="Dead Letter"
-                value={data?.queue.dlqCount ?? 0}
-                sub="Jobs in DLQ"
-                color={data?.queue.dlqCount > 0 ? 'text-red-400' : 'text-primary'}
-                accent={data?.queue.dlqCount > 0 ? 'border-red-400/15' : 'border-primary/15'}
-              />
-              <MetricCard
-                icon={ShieldAlert}
-                label="Fraud Triggers"
-                value={data?.metrics[METRICS.FRAUD_TRIGGER_COUNT]?.count ?? 0}
-                sub="This session"
-                color="text-amber-400"
-                accent="border-amber-400/15"
-              />
-              <MetricCard
-                icon={Lock}
-                label="Auth Failures"
-                value={data?.metrics[METRICS.AUTH_FAILURE_COUNT]?.count ?? 0}
-                sub="This session"
-                color={data?.metrics[METRICS.AUTH_FAILURE_COUNT]?.count > 3 ? 'text-red-400' : 'text-blue-400'}
-                accent="border-blue-400/15"
-              />
-            </div>
-
-            {/* Device risk */}
-            {data?.deviceRisk && (
-              <div className={`glass-card rounded-2xl px-4 py-3 flex items-center gap-3 border ${
-                data.deviceRisk.deviceRisk === 'high'   ? 'border-red-400/20' :
-                data.deviceRisk.deviceRisk === 'medium' ? 'border-amber-400/20' : 'border-primary/15'
-              }`}>
-                <Cpu size={14} className={
-                  data.deviceRisk.deviceRisk === 'high'   ? 'text-red-400' :
-                  data.deviceRisk.deviceRisk === 'medium' ? 'text-amber-400' : 'text-primary'
-                } />
-                <div className="flex-1">
-                  <p className="text-[11px] font-semibold text-foreground">Current Device Risk</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {data.deviceRisk.riskReason || 'Trusted device'}
-                  </p>
-                </div>
-                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${
-                  data.deviceRisk.deviceRisk === 'high'   ? 'text-red-400 bg-red-400/10 border-red-400/20' :
-                  data.deviceRisk.deviceRisk === 'medium' ? 'text-amber-400 bg-amber-400/10 border-amber-400/20' :
-                  'text-primary bg-primary/10 border-primary/20'
-                }`}>{data.deviceRisk.deviceRisk}</span>
-              </div>
-            )}
-
-            {/* Fraud Feed — session audit log */}
-            <div className="glass-card rounded-2xl p-4 border border-white/6">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                Fraud Feed
-              </p>
-              <FraudFeed alerts={data?.fraudAlerts} />
-            </div>
-
-            {/* Settlement Monitor */}
-            <div className="glass-card rounded-2xl p-4 border border-white/6">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                Settlement Monitor
-              </p>
-              <SettlementMonitor
-                settlements={data?.settlements || { settled: 0, pending: 0, failed: 0, failureRate: 0, total: 0 }}
-                onRetry={handleRetry}
-                retrying={retrying}
-              />
-            </div>
-
-            {/* Queue Health */}
-            <div className="glass-card rounded-2xl p-4 border border-white/6">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                Queue Health
-              </p>
-              <QueueMonitor queue={data?.queue || { pending: 0, processing: 0, completed: 0, dlqCount: 0 }} />
-            </div>
-
-            {/* Auth Failures */}
-            <div className="glass-card rounded-2xl p-4 border border-white/6">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                Recent Auth Failures
-              </p>
-              {data?.authFailures?.length ? (
-                <div className="space-y-2">
-                  {data.authFailures.map((e, i) => (
-                    <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/3 border border-white/5">
-                      <XCircle size={12} className="text-red-400 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-foreground truncate">{e.userId}</p>
-                        <p className="text-[10px] text-muted-foreground">{new Date(e.epochMs).toLocaleTimeString()}</p>
-                      </div>
-                      <SeverityBadge severity={e.severity} />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 py-4 justify-center">
-                  <CheckCircle2 size={16} className="text-primary opacity-50" />
-                  <p className="text-xs text-muted-foreground">No auth failures this session</p>
-                </div>
-              )}
-            </div>
-
-            {/* Reconciliation Status */}
-            <div className={`glass-card rounded-2xl px-4 py-3 flex items-center gap-3 border ${
-              data?.lastRecon ? 'border-primary/15' : 'border-white/6'
-            }`}>
-              <Clock size={14} className="text-primary shrink-0" />
-              <div className="flex-1">
-                <p className="text-[11px] font-semibold text-foreground">Last Reconciliation</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {data?.lastRecon
-                    ? new Date(data.lastRecon.epochMs).toLocaleString()
-                    : 'No reconciliation run this session'}
-                </p>
-              </div>
-              <button onClick={() => navigate('/audit')} className="flex items-center gap-1 text-[10px] text-primary">
-                View <ChevronRight size={10} />
-              </button>
-            </div>
-
-          </motion.div>
-        </AnimatePresence>
+      {/* Panels grid — shown once we have snapshot or after an error (empty panels = undefined data) */}
+      {(snapshot || error) && (
+        <div className="space-y-3">
+          {/* Row 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Panel1 data={panels.panel_1_system_health} />
+            <Panel2 data={panels.panel_2_webhook_health_24h} />
+            <Panel3 data={panels.panel_3_risk_trend_24h} />
+          </div>
+          {/* Row 2 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Panel4 data={panels.panel_4_payment_flow} />
+            <Panel5 data={panels.panel_5_scam_signals} />
+            <Panel6 data={panels.panel_6_provider_health} />
+          </div>
+        </div>
       )}
     </div>
   );
