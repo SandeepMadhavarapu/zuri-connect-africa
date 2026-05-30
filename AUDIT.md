@@ -509,6 +509,21 @@ Edge Functions follow patterns of existing initiate-payment/webhook-handler:
 Gate in initiate-payment (add after phone match, before buildPendingPaymentRecord):
 For payment_type 'paybill' or 'till', SELECT from provider_payment_methods matching (method_type, shortcode) WHERE verification_status='verified'. If no match, return 422 UNVERIFIED_PROVIDER with security_events 'payment.unverified_provider_blocked'.
 
+#### Phase 3 — Provider Directory Status (as of 2026-05-29)
+
+All four prompts deployed:
+- 3.1+3.2: Migration applied (5 tables, RLS forced)
+- 3.3: provider-search Edge Function (live)
+- 3.4: report-wrong-number Edge Function (live)
+- 3.5: admin-verify-provider Edge Function + verify_provider_payment_method Postgres function (live)
+- 3.6: provider gate in initiate-payment shipped behind ZURI_REQUIRE_VERIFIED_PROVIDER flag (dormant)
+
+Activation status: GATE DORMANT
+
+To activate: see docs/PROVIDER_DIRECTORY_ACTIVATION.md
+
+Known limitation: only 1 verified entry will exist after seed (KPLC PayBill 888880). All other paybill/till payments will be rejected once the gate is active. Production launch requires at least 5 real verified entries via admin-verify-provider.
+
 ### 24.2 Dispute / Reversal backend — minimum viable
 
 Migration supabase/migrations/20260525100000_disputes_reversals.sql:
