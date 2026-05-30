@@ -162,6 +162,61 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: 'PHONE_MISMATCH', message: 'Initiating phone does not match your verified account phone.' }, 403);
   }
 
+  // ── Provider directory gate ─────────────────────────────────────
+  // Only applies to paybill and till payments. send_money
+  // (peer-to-peer phone-to-phone) is exempt because it's not a
+  // directory lookup — it's a direct phone number transfer.
+
+  const requireVerifiedProvider =
+    Deno.env.get('ZURI_REQUIRE_VERIFIED_PROVIDER') === 'true';
+
+  if (requireVerifiedProvider &&
+      (body.payment_type === 'paybill' ||
+       body.payment_type === 'till')) {
+
+    // Use service_role for this lookup — we need to see the
+    // verification status regardless of RLS. Risk decisions are
+    // server-side, not user-side.
+    const { data: methodRow, error: methodErr } = await supabaseAdmin
+      .from('provider_payment_methods')
+      .select('id, verification_status')
+      .eq('method_type', body.payment_type)
+      .eq('shortcode', body.to_phone)
+      .maybeSingle();
+
+    if (methodErr) {
+      console.error(JSON.stringify({
+        ts: new Date().toISOString(),
+        fn: 'initiate-payment',
+        evt: 'provider_gate_lookup_failed',
+        user_id: userRes.user.id,
+        error_code: methodErr.code,
+      }));
+      return json({ error: 'provider_lookup_failed' }, 500);
+    }
+
+    if (!methodRow || methodRow.verification_status !== 'verified') {
+      console.warn(JSON.stringify({
+        ts: new Date().toISOString(),
+        fn: 'initiate-payment',
+        evt: 'unverified_provider_rejected',
+        user_id: userRes.user.id,
+        method_type: body.payment_type,
+        shortcode: body.to_phone,
+        actual_status: methodRow?.verification_status ?? 'not_in_directory',
+      }));
+      return json(
+        {
+          error: 'unverified_provider',
+          message: 'This destination is not in our verified provider directory. ' +
+                   'You can search verified billers via provider-search.',
+        },
+        422,
+      );
+    }
+  }
+  // ── End provider directory gate ─────────────────────────────────
+
   let pendingRecord;
   try {
     pendingRecord = buildPendingPaymentRecord({ body, userId: userRes.user.id, normalizedFromPhone });
