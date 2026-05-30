@@ -56,9 +56,9 @@ BEGIN
   END IF;
 
   -- Capture before state
-  SELECT to_jsonb(row(*))
+  SELECT to_jsonb(t)
     INTO v_before
-    FROM provider_payment_methods
+    FROM provider_payment_methods t
     WHERE id = p_payment_method_id;
 
   IF v_before IS NULL THEN
@@ -86,9 +86,9 @@ BEGIN
   RETURNING id INTO v_source_id;
 
   -- Capture after state
-  SELECT to_jsonb(row(*))
+  SELECT to_jsonb(t)
     INTO v_after
-    FROM provider_payment_methods
+    FROM provider_payment_methods t
     WHERE id = p_payment_method_id;
 
   -- Insert audit event
