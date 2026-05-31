@@ -21,6 +21,7 @@
     "prepitch": "npm run lint && npm run build && node scripts/check-no-env-local-in-dist.mjs && npm run test:ci && npm run scan:secrets && npm run check:prepitch",
     "test": "vitest",
     "test:ci": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.js",
     "test:e2e": "npm run build && playwright test",
     "test:e2e:install": "playwright install --with-deps chromium",
     "smoke:ai-router": "node scripts/ai-router-smoke.mjs"

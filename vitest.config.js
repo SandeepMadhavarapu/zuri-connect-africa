@@ -12,7 +12,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setupTests.js'],
     include: ['tests/**/*.{test,spec}.{js,jsx}', 'src/**/*.{test,spec}.{js,jsx}'],
-    exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**'],
+    // *.integration.test.js files hit live infrastructure — they run only via
+    // `npm run test:integration` (vitest.integration.config.js), never in test:ci.
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**', '**/*.integration.test.{js,jsx}'],
     testTimeout: 15000,
     hookTimeout: 15000,
     coverage: {
