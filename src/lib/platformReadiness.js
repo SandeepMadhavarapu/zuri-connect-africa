@@ -126,7 +126,7 @@ export const PLATFORM_COMPONENTS = Object.freeze([
     proof: [
       'supabase/functions/webhook-handler/index.ts',
       'supabase/migrations/20260511140000_webhook_nonces.sql',
-      'src/backend/webhooks/verifyWebhook.js',
+      'supabase/functions/_shared/webhook-verify.ts',
     ],
   },
   {

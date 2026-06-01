@@ -161,8 +161,8 @@ describe('pre-pitch formatting and Edge safety', () => {
     expect(edgeSource).not.toMatch(/return\s+json\([^)]*error:\s*e\s+instanceof\s+Error\s*\?\s*e\.message/);
   });
 
-  it('frontend webhook verification never reads VITE_* webhook secrets', () => {
-    const webhookVerifier = source('src/backend/webhooks/verifyWebhook.js');
+  it('production webhook verification never reads VITE_* webhook secrets', () => {
+    const webhookVerifier = source('supabase/functions/_shared/webhook-verify.ts');
     expect(webhookVerifier).not.toMatch(/VITE_.*WEBHOOK_SECRET/i);
   });
 

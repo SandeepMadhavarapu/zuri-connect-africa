@@ -312,3 +312,35 @@ The test imports `replayLedger` from the shadow stack but mocks `@/services/ledg
 | Recommended admin panels | **12 total** (6 in AdminSecurityDashboard + 6 in SecurityOperationsCenter) |
 | Four-role model appropriate? | **Yes for post-launch; launch with admin + auditor only** |
 | Shadow tables to drop in migrations | **None** — shadow stack uses localStorage, not the database |
+
+---
+
+## Phase 5.6 Stage C resolution (2026-05-31)
+
+### `tests/unit/reconciliation.test.js` — Path A taken (archived)
+
+The test imports `replayLedger` from `@/backend/reconciliation/reconciliationEngine.js`
+(shadow stack). The function is shadow-only; it does not exist in any real service
+or Edge Function. Production reconciliation runs server-side in Edge Functions
+against `reconciliation_runs` / `reconciliation_logs` tables — integration tests
+for these belong in Phase 7 (the dedicated RLS / test pack phase), not here.
+
+Decision: **archive alongside the source** at `_archive/tests/unit/reconciliation.test.js`.
+
+### `src/lib/platformReadiness.js` line 129 — Option 1 taken (replaced with real path)
+
+Replaced `'src/backend/webhooks/verifyWebhook.js'` → `'supabase/functions/_shared/webhook-verify.ts'`.
+The proof field now points at the real code that runs signature verification in production.
+
+### `tests/unit/prepitch-readiness.test.js` line 165 — updated to real file
+
+The test `'frontend webhook verification never reads VITE_* webhook secrets'` was
+reading the shadow verifier file via `source()`. Updated to check
+`supabase/functions/_shared/webhook-verify.ts` (the production verifier) instead,
+and renamed the test to `'production webhook verification never reads VITE_* webhook secrets'`.
+
+### Webhook verifier parity — SAFE TO ARCHIVE
+
+See `docs/WEBHOOK_VERIFIER_PARITY.md` for the full parity table. Real system equals
+or exceeds all shadow protections. IP allowlisting and DB-backed nonce tracking are
+additional layers absent from the shadow verifier.
