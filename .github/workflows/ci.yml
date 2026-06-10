@@ -2,9 +2,9 @@
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'pivot/**' ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, 'pivot/**' ]
 
 jobs:
   build-and-test:
