@@ -2,34 +2,10 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  Wifi, ShieldAlert, RefreshCw, WifiOff, X, Sparkles, Phone,
+  ShieldAlert, WifiOff, X, Sparkles,
 } from 'lucide-react';
 
 const ACTIONS = [
-  {
-    id: 'bundle',
-    icon: Wifi,
-    color: 'text-violet-400',
-    bg: 'bg-violet-400/10',
-    border: 'border-violet-400/20',
-    label: 'Explore weekly bundle?',
-    reason: 'Preview suggestion from sample bundle signals',
-    cta: 'Buy now',
-    path: '/bundles',
-    priority: 1,
-  },
-  {
-    id: 'airtime',
-    icon: Phone,
-    color: 'text-amber-400',
-    bg: 'bg-amber-400/10',
-    border: 'border-amber-400/20',
-    label: 'Review airtime top-up?',
-    reason: 'Preview suggestion from sample airtime balance',
-    cta: 'Top up',
-    path: '/airtime',
-    priority: 2,
-  },
   {
     id: 'freeze',
     icon: ShieldAlert,
@@ -40,19 +16,7 @@ const ACTIONS = [
     reason: 'Sample risk pattern for Scam Shield review',
     cta: 'Review',
     path: '/security',
-    priority: 3,
-  },
-  {
-    id: 'retry',
-    icon: RefreshCw,
-    color: 'text-blue-400',
-    bg: 'bg-blue-400/10',
-    border: 'border-blue-400/20',
-    label: 'Review PayBill flow?',
-    reason: 'Sample KPLC payment event for staging review',
-    cta: 'Retry',
-    path: '/paybill',
-    priority: 4,
+    priority: 1,
   },
   {
     id: 'wifi',
@@ -60,11 +24,11 @@ const ACTIONS = [
     color: 'text-muted-foreground',
     bg: 'bg-white/5',
     border: 'border-white/10',
-    label: 'Review data usage?',
+    label: 'Review network status?',
     reason: 'Preview suggestion from sample network signals',
     cta: 'Dismiss',
     path: null,
-    priority: 5,
+    priority: 2,
   },
 ];
 

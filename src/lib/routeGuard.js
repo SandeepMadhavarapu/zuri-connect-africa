@@ -21,9 +21,6 @@ export const ROUTE_PROTECTION = {
   '/home':         { level: 'auth' },
 
   // ── Standard auth ─────────────────────────────────────────────────────
-  '/airtime':      { level: 'auth' },
-  '/bundles':      { level: 'auth' },
-  '/bonga':        { level: 'auth' },
   '/history':      { level: 'auth' },
   '/notifications':{ level: 'auth' },
   '/profile':      { level: 'auth' },
@@ -31,13 +28,8 @@ export const ROUTE_PROTECTION = {
   '/platform':     { level: 'auth' },
 
   // ── Step-up required — financial flows ────────────────────────────────
-  '/send':         { level: 'stepup', stepUpFreshMs: 0,           reason: 'Money transfer requires verification' },
-  '/receive':      { level: 'stepup', stepUpFreshMs: 5 * 60_000,  reason: 'Receive money — please verify identity' },
-  '/paybill':      { level: 'stepup', stepUpFreshMs: 0,           reason: 'Paybill payment requires verification' },
-  '/fuliza':       { level: 'stepup', stepUpFreshMs: 0,           reason: 'Fuliza overdraft requires verification' },
   '/wallet':       { level: 'stepup', stepUpFreshMs: 10 * 60_000, reason: 'Wallet access requires recent verification' },
   '/schedules':    { level: 'stepup', stepUpFreshMs: 10 * 60_000, reason: 'Scheduled payments require verification' },
-  '/budget':       { level: 'auth' },
 
   // ── Step-up required — security sensitive ─────────────────────────────
   '/security':     { level: 'stepup', stepUpFreshMs: 0,            reason: 'Security settings require PIN verification' },

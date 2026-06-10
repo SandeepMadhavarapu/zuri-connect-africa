@@ -17,58 +17,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const sendSource = readFileSync(resolve(process.cwd(), 'src/pages/Send.jsx'), 'utf8');
-const paybillSource = readFileSync(resolve(process.cwd(), 'src/pages/Paybill.jsx'), 'utf8');
-const airtimeSource = readFileSync(resolve(process.cwd(), 'src/pages/Airtime.jsx'), 'utf8');
-const bundlesSource = readFileSync(resolve(process.cwd(), 'src/pages/Bundles.jsx'), 'utf8');
 const biometricStepUpSource = readFileSync(resolve(process.cwd(), 'src/lib/biometricStepUp.js'), 'utf8');
-
-describe('payment pages wire step-up to BiometricStepUpModal', () => {
-  it.each([
-    ['Send', sendSource, 'payment_send'],
-    ['Paybill', paybillSource, 'payment_paybill'],
-    ['Airtime', airtimeSource, 'payment_airtime'],
-    ['Bundles', bundlesSource, 'payment_bundle'],
-  ])('%s imports BiometricStepUpModal and tags the action as %s', (_name, source, actionType) => {
-    expect(source).toMatch(/BiometricStepUpModal/);
-    expect(source).toMatch(new RegExp(`actionType="${actionType}"`));
-  });
-
-  it.each([
-    ['Send', sendSource],
-    ['Paybill', paybillSource],
-    ['Airtime', airtimeSource],
-    ['Bundles', bundlesSource],
-  ])('%s does not call the broken authenticateBiometric pre-completion path', (_name, source) => {
-    // The old flow called authenticateBiometric which calls verify-biometric.verify,
-    // consuming the WebAuthn challenge before complete-step-up could re-verify
-    // its binding. New flow MUST use BiometricStepUpModal which routes the
-    // assertion intact to complete-step-up.
-    expect(source).not.toMatch(/await authenticateBiometric\(/);
-  });
-
-  it.each([
-    ['Send', sendSource],
-    ['Paybill', paybillSource],
-    ['Airtime', airtimeSource],
-    ['Bundles', bundlesSource],
-  ])('%s handles RISK_STEP_UP_REQUIRED instead of throwing (no initiateAndWaitForPayment top-level)', (_name, source) => {
-    // The throwing helper is still exported for tests/other callers, but the
-    // sensitive payment pages must use the explicit step-up handling path.
-    expect(source).toMatch(/initiated\?\.stepUpRequired/);
-    expect(source).toMatch(/setServerStepUp\(/);
-  });
-
-  it.each([
-    ['Send', sendSource],
-    ['Paybill', paybillSource],
-    ['Airtime', airtimeSource],
-    ['Bundles', bundlesSource],
-  ])('%s renders PIN fallback when required_step_up === "pin"', (_name, source) => {
-    expect(source).toMatch(/required_step_up === 'pin'/);
-    expect(source).toMatch(/PinPad/);
-  });
-});
 
 describe('biometricStepUp library security', () => {
   it('does not call verify-biometric.verify (assertion goes straight to complete-step-up)', () => {

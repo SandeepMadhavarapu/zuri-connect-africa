@@ -4,18 +4,10 @@ import { AI_BRAND } from '@/lib/branding/aiBrand';
 
 const routeTitles = {
   '/': null,
-  '/send': 'Send Money',
-  '/receive': 'Receive',
-  '/airtime': 'Airtime',
-  '/bundles': 'Data Bundles',
-  '/fuliza': 'Fuliza',
-  '/bonga': 'Bonga Points',
-  '/paybill': 'Pay Bill',
   '/history': 'Transactions',
   '/profile': 'Account',
   '/ai': AI_BRAND.routeTitle,
   '/notifications': 'Notifications',
-  '/budget': 'Budget & Insights',
   '/schedules': 'Standing Orders',
   '/wallet': 'M-PESA Wallet',
   '/security': 'Security Centre',

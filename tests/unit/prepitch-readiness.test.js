@@ -48,19 +48,15 @@ describe('pre-pitch visible copy guardrails', () => {
   const keyUiFiles = [
     'src/pages/Home.jsx',
     'src/pages/AI.jsx',
-    'src/pages/Budget.jsx',
     'src/pages/Profile.jsx',
     'src/pages/History.jsx',
-    'src/pages/Send.jsx',
-    'src/pages/Paybill.jsx',
-    'src/pages/Airtime.jsx',
-    'src/pages/Bundles.jsx',
+    'src/pages/Wallet.jsx',
+    'src/pages/Schedules.jsx',
     'src/pages/SecurityCentre.jsx',
     'src/pages/admin/ReconciliationCommandCenter.jsx',
     'src/components/home/BalanceCard.jsx',
     'src/components/auth/FaceID.jsx',
     'src/components/auth/VoiceBiometric.jsx',
-    'src/components/budget/AIInsightsPanel.jsx',
   ];
 
   it('keeps forbidden legacy/demo/error strings out of key user-facing copy', () => {

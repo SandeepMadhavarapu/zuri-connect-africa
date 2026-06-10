@@ -8,64 +8,16 @@ import { audit } from '../auditLogger';
 import { emit } from '../eventBus';
 
 export const ACTION_TYPES = {
-  SEND_MONEY: 'send_money',
-  PAYBILL: 'paybill',
-  BUY_AIRTIME: 'buy_airtime',
-  BUY_BUNDLE: 'buy_bundle',
   RETRY_TRANSACTION: 'retry_transaction',
   FREEZE_WALLET: 'freeze_wallet',
   REPORT_SCAM: 'report_scam',
   SCHEDULE_PAYMENT: 'schedule_payment',
-  OPTIMIZE_BUNDLES: 'optimize_bundles',
   REVERSE_TRANSFER: 'reverse_transfer',
   ENABLE_PROTECTION: 'enable_protection',
   SECURITY_REVIEW: 'security_review',
 };
 
 const ACTION_CATALOG = {
-  send_money: {
-    label: 'Review Send Money',
-    description: 'Prepare a send-money flow for your review. Payment still requires confirmation, risk checks, and M-PESA approval.',
-    icon: 'ShieldCheck',
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-    requiresConfirmation: true,
-    requiresStepUp: true,
-    proposalOnly: true,
-    path: '/send',
-  },
-  paybill: {
-    label: 'Review Paybill',
-    description: 'Prepare a paybill flow for your review. Payment still requires confirmation, risk checks, and M-PESA approval.',
-    icon: 'ShieldCheck',
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-    requiresConfirmation: true,
-    requiresStepUp: true,
-    proposalOnly: true,
-    path: '/paybill',
-  },
-  buy_airtime: {
-    label: 'Review Airtime',
-    description: 'Prepare an airtime purchase for your review. Payment still requires confirmation, risk checks, and M-PESA approval.',
-    icon: 'ShieldCheck',
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-    requiresConfirmation: true,
-    requiresStepUp: true,
-    proposalOnly: true,
-    path: '/airtime',
-  },
-  buy_bundle: {
-    label: 'Review Data Bundle',
-    description: 'Prepare a data bundle purchase for your review.',
-    icon: 'Wifi',
-    color: 'text-violet-400',
-    bg: 'bg-violet-400/10',
-    requiresConfirmation: true,
-    proposalOnly: true,
-    path: '/bundles',
-  },
   retry_transaction: {
     label: 'Retry Failed Payment',
     description: 'Open the transaction history so you can review and retry a failed payment through the secure payment flow.',
@@ -106,16 +58,6 @@ const ACTION_CATALOG = {
     requiresConfirmation: true,
     proposalOnly: true,
     path: '/schedules',
-  },
-  optimize_bundles: {
-    label: 'Optimise My Bundles',
-    description: 'Open bundles so you can compare available options.',
-    icon: 'TrendingUp',
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-    requiresConfirmation: false,
-    proposalOnly: true,
-    path: '/bundles',
   },
   reverse_transfer: {
     label: 'Request Transfer Reversal',
@@ -236,15 +178,10 @@ export function getActionLog() {
 export function suggestActionsFromResponse(responseText) {
   const lower = String(responseText || '').toLowerCase();
   const suggestions = [];
-  if (/send|transfer|tuma/.test(lower)) suggestions.push('send_money');
-  if (/paybill|pay bill|till/.test(lower)) suggestions.push('paybill');
-  if (/airtime|top ?up/.test(lower)) suggestions.push('buy_airtime');
-  if (/bundle|data|internet|gb/.test(lower)) suggestions.push('buy_bundle');
   if (/failed|retry|unsuccessful/.test(lower)) suggestions.push('retry_transaction');
   if (/freeze|block|suspicious|fraud/.test(lower)) suggestions.push('freeze_wallet');
   if (/scam|report|suspicious/.test(lower)) suggestions.push('report_scam');
   if (/schedul|recurring|automat/.test(lower)) suggestions.push('schedule_payment');
-  if (/optimis|save|cheaper|bundle/.test(lower)) suggestions.push('optimize_bundles');
   if (/protect|secure|safety|pin/.test(lower)) suggestions.push('enable_protection');
   return [...new Set(suggestions)].slice(0, 3);
 }

@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { getRouteProtection, requiresStepUp, requiresAdmin } from '@/lib/routeGuard.js';
 
 describe('route guard configuration', () => {
-  it('send and paybill require step-up', () => {
-    expect(getRouteProtection('/send').level).toBe('stepup');
-    expect(getRouteProtection('/paybill').level).toBe('stepup');
+  it('wallet and schedules require step-up', () => {
+    expect(getRouteProtection('/wallet').level).toBe('stepup');
+    expect(getRouteProtection('/schedules').level).toBe('stepup');
+    expect(getRouteProtection('/security').level).toBe('stepup');
   });
 
   it('admin routes require admin level', () => {
@@ -19,6 +20,6 @@ describe('route guard configuration', () => {
 
   it('requiresStepUp for financial surfaces', () => {
     expect(requiresStepUp('/wallet')).toBe(true);
-    expect(requiresStepUp('/budget')).toBe(false);
+    expect(requiresStepUp('/history')).toBe(false);
   });
 });

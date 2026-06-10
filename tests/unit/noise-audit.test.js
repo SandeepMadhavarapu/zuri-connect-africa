@@ -123,21 +123,6 @@ describe('noise audit · no raw fake/mock/Demo user-facing labels', () => {
   });
 });
 
-// ── 2. Bundles "AI Recommended" is gone (was not data-driven) ────────────────
-
-describe('noise audit · Bundles', () => {
-  it('Bundles.jsx no longer hardcodes an "AI Recommended" tag', () => {
-    const text = read('src/pages/Bundles.jsx');
-    expect(text).not.toMatch(/['"]AI Recommended['"]/);
-  });
-
-  it('Bundles.jsx still permits curated curatorial tags ("Popular", "Best Value")', () => {
-    const text = read('src/pages/Bundles.jsx');
-    expect(text).toMatch(/['"]Popular['"]/);
-    expect(text).toMatch(/['"]Best Value['"]/);
-  });
-});
-
 // ── 3. Home trust chips do not overclaim live network/provider status ────────
 
 describe('noise audit · Home trust chips', () => {

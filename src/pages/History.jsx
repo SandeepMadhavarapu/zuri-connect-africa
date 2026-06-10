@@ -236,10 +236,10 @@ export default function History() {
               Your M-PESA activity will appear here once you make your first transaction.
             </p>
             <button
-              onClick={() => navigate('/send')}
+              onClick={() => navigate('/wallet')}
               className="px-5 py-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-semibold transition-all hover:bg-primary/15"
             >
-              Send Money
+              Open Wallet
             </button>
           </div>
         )}

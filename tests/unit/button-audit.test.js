@@ -103,11 +103,6 @@ describe('button audit · no dead handlers on critical buttons', () => {
     expect(text).toMatch(/(local|this device)/i);
   });
 
-  it('Receive Share button has an onClick handler', () => {
-    const text = stripComments(read('src/pages/Receive.jsx'));
-    expect(text).toMatch(/onClick\s*=\s*\{handleShare\}/);
-    expect(text).toMatch(/navigator\.share|navigator\.clipboard\.writeText/);
-  });
 });
 
 describe('button audit · honest preview labels for local-only flows', () => {
@@ -151,19 +146,6 @@ describe('button audit · honest preview labels for local-only flows', () => {
 });
 
 describe('button audit · payment pages remain server-authoritative', () => {
-  const PAYMENT_PAGES = [
-    'src/pages/Send.jsx',
-    'src/pages/Paybill.jsx',
-    'src/pages/Airtime.jsx',
-    'src/pages/Bundles.jsx',
-  ];
-
-  it.each(PAYMENT_PAGES)('%s calls the server payment service, not a local ledger as authority', (page) => {
-    const text = stripComments(read(page));
-    expect(text).toMatch(/paymentService|initiateAndWaitForPayment|resumePaymentAfterStepUp/);
-    expect(text).not.toMatch(/\bauthenticateBiometric\s*\(/);
-  });
-
   it('AIActionModal never claims to execute a payment from inside the modal', () => {
     const text = stripComments(read('src/components/ai/AIActionModal.jsx'));
     expect(text).not.toMatch(/Confirm — \$\{config\.label\}/);

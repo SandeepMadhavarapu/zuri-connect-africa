@@ -16,18 +16,10 @@ import AppShell from './components/layout/AppShell';
 
 // Pages
 import Home from './pages/Home';
-import Send from './pages/Send';
-import Receive from './pages/Receive';
-import Airtime from './pages/Airtime';
-import Bundles from './pages/Bundles';
-import Fuliza from './pages/Fuliza';
-import Bonga from './pages/Bonga';
-import Paybill from './pages/Paybill';
 import History from './pages/History';
 import AI from './pages/AI';
 import Profile from './pages/Profile';
 import Notifications from './pages/Notifications';
-import Budget from './pages/Budget';
 import Schedules from './pages/Schedules';
 import Wallet from './pages/Wallet';
 import SecurityCentre from './pages/SecurityCentre';
@@ -141,20 +133,10 @@ function AuthenticatedApp() {
         <Route element={<ProtectedRoute unauthenticatedElement={authRedirect} />}>
           <Route element={<AppShell />}>
             <Route path="/" element={<Home />} />
-            <Route path="/send" element={<Send />} />
-            <Route path="/receive" element={<Receive />} />
-            <Route path="/airtime" element={<Airtime />} />
-            <Route path="/bundles" element={<Bundles />} />
-            <Route path="/fuliza" element={<Fuliza />} />
-            {import.meta.env.VITE_ALLOW_INTERNAL_PAGES === 'true' && (
-              <Route path="/bonga" element={<Bonga />} />
-            )}
-            <Route path="/paybill" element={<Paybill />} />
             <Route path="/history" element={<History />} />
             <Route path="/ai" element={<AI />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />
-            <Route path="/budget" element={<Budget />} />
             <Route path="/schedules" element={<Schedules />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/security" element={<SecurityCentre />} />

@@ -90,14 +90,14 @@ describe('Duke AI action policy', () => {
   });
 
   it('AI action proposal confirmation only prepares navigation, not payment execution', async () => {
-    const config = getActionConfig('send_money');
-    const result = await executeAction('send_money', { amount: 250, recipient: '***5678' }, 'user@example.com');
+    const config = getActionConfig('schedule_payment');
+    const result = await executeAction('schedule_payment', {}, 'user@example.com');
     const log = getActionLog();
 
     expect(config.proposalOnly).toBe(true);
-    expect(result.path).toBe('/send');
+    expect(result.path).toBe('/schedules');
     expect(result.message).toMatch(/secure flow/i);
-    expect(log[0]).toMatchObject({ type: 'send_money', status: 'proposal_confirmed' });
+    expect(log[0]).toMatchObject({ type: 'schedule_payment', status: 'proposal_confirmed' });
   });
 
   it('AI router cannot mark pending payments succeeded or call ledger posting directly', () => {
@@ -107,12 +107,8 @@ describe('Duke AI action policy', () => {
     expect(router).not.toMatch(/initiate-payment|initiatePayment/i);
   });
 
-  it('financial action execution remains routed through paymentService initiate-payment flow', () => {
+  it('paymentService still exports initiatePayment for the secure payment flow', () => {
     const service = readFileSync(resolve('src/services/paymentService.js'), 'utf8');
-    const sendPage = readFileSync(resolve('src/pages/Send.jsx'), 'utf8');
-
     expect(service).toMatch(/initiatePayment/);
-    expect(sendPage).toMatch(/initiateServerPayment/);
-    expect(sendPage).toMatch(/completeServerStepUp|waitForPaymentConfirmation/);
   });
 });

@@ -5,24 +5,16 @@
 
 const EXPECTED_ROUTES = {
   '/': 'Home',
-  '/send': 'Send',
-  '/receive': 'Receive',
-  '/airtime': 'Airtime',
-  '/bundles': 'Bundles',
-  '/fuliza': 'Fuliza',
-  '/paybill': 'Paybill',
   '/history': 'History',
   '/ai': 'Duke AI',
   '/profile': 'Account',
   '/notifications': 'Notifications',
-  '/budget': 'Budget',
   '/schedules': 'Schedules',
   '/wallet': 'Wallet',
   '/security': 'Security',
   '/network': 'Network Status',
   '/audit': 'Audit',
   ...(import.meta.env.VITE_ALLOW_INTERNAL_PAGES === 'true' ? {
-    '/bonga': 'Bonga',
     '/admin': 'Admin',
     '/admin/soc': 'Security SOC',
   } : {}),
@@ -33,21 +25,15 @@ const NAVIGATION_LINKS = [
   { from: 'BottomNav', route: '/', label: 'Home' },
   { from: 'BottomNav', route: '/history', label: 'History' },
   { from: 'BottomNav', route: '/ai', label: 'Duke AI' },
-  { from: 'BottomNav', route: '/budget', label: 'Budget' },
+  { from: 'BottomNav', route: '/wallet', label: 'Wallet' },
   { from: 'BottomNav', route: '/profile', label: 'Account' },
-  
+
   // Home/Dashboard quick actions
-  { from: 'Home', route: '/send', label: 'Send Money' },
-  { from: 'Home', route: '/receive', label: 'Receive' },
-  { from: 'Home', route: '/airtime', label: 'Airtime' },
-  { from: 'Home', route: '/bundles', label: 'Bundles' },
-  { from: 'Home', route: '/fuliza', label: 'Fuliza' },
-  { from: 'Home', route: '/paybill', label: 'PayBill' },
   { from: 'Home', route: '/wallet', label: 'Wallet' },
-  ...(import.meta.env.VITE_ALLOW_INTERNAL_PAGES === 'true' ? [
-    { from: 'Home', route: '/bonga', label: 'Rewards' },
-  ] : []),
-  
+  { from: 'Home', route: '/schedules', label: 'Standing Orders' },
+  { from: 'Home', route: '/security', label: 'Security' },
+  { from: 'Home', route: '/ai', label: 'Duke AI' },
+
   // Profile menu
   { from: 'Profile', route: '/security', label: 'Security' },
   { from: 'Profile', route: '/notifications', label: 'Notifications' },

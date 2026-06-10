@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  Wifi, Signal, TrendingUp, ShieldCheck, Award, AlertTriangle,
+  Signal, TrendingUp, ShieldCheck, AlertTriangle,
 } from 'lucide-react';
 
 // Mini ring-style progress widget
@@ -49,34 +49,19 @@ export default function DynamicWidgets() {
 
   const widgets = [
     {
-      icon: Wifi,       iconColor: 'text-violet-400', label: 'Bundle',
-      value: 'Sample',  sub: 'Preview bundle signal', pct: 48,  ringColor: '#a78bfa', warn: false,
-      path: '/bundles',
-    },
-    {
       icon: Signal,     iconColor: 'text-primary',    label: 'Network',
       value: 'Preview', sub: 'Network signal sample',  pct: 92,  ringColor: '#2ecc71', warn: false,
       path: '/network',
     },
     {
-      icon: TrendingUp, iconColor: 'text-blue-400',   label: 'Spend Pulse',
-      value: '-18%',    sub: 'Sample spend trend',     pct: 62,  ringColor: '#60a5fa', warn: false,
-      path: '/budget',
+      icon: TrendingUp, iconColor: 'text-blue-400',   label: 'Activity',
+      value: '-18%',    sub: 'Sample activity trend',  pct: 62,  ringColor: '#60a5fa', warn: false,
+      path: '/history',
     },
     {
       icon: ShieldCheck, iconColor: 'text-primary',   label: 'Security',
       value: 'Protected', sub: 'Security checks active', pct: 100, ringColor: '#2ecc71', warn: false,
       path: '/security',
-    },
-    ...(import.meta.env.VITE_ALLOW_INTERNAL_PAGES === 'true' ? [{
-      icon: Award,      iconColor: 'text-amber-400',  label: 'Rewards',
-      value: 'Preview', sub: 'Rewards pilot model',    pct: 74,  ringColor: '#f0a500', warn: false,
-      path: '/bonga',
-    }] : []),
-    {
-      icon: Wifi,       iconColor: 'text-amber-400',  label: 'Airtime',
-      value: 'Sample',  sub: 'Airtime signal sample',  pct: 15,  ringColor: '#f0a500', warn: true,
-      path: '/airtime',
     },
   ];
 

@@ -30,7 +30,6 @@ import {
   getDirectoryDisplayCode,
   PENDING_VERIFICATION_PLACEHOLDER,
   PENDING_VERIFICATION_RENDER_LABEL,
-  PRODUCTION_PAYMENT_HELPER_COPY,
 } from '@/lib/providerDirectory.js';
 
 const ROOT = process.cwd();
@@ -207,64 +206,6 @@ describe('provider directory · verification metadata', () => {
   });
 });
 
-// ── 3. Paybill.jsx popularBillers must declare verification metadata ─────────
-
-describe('Paybill · sample directory metadata', () => {
-  const SOURCE = stripJsComments(read('src/pages/Paybill.jsx'));
-
-  it('every popularBillers entry is marked unverified_sample with source required and displayCode placeholder', () => {
-    const billerBlocks = SOURCE.match(/\{\s*id:\s*\d+[\s\S]*?\}/g) || [];
-    expect(billerBlocks.length, 'Paybill.jsx must declare popularBillers entries').toBeGreaterThan(0);
-    for (const block of billerBlocks) {
-      expect(block).toMatch(/verificationStatus:\s*['"]unverified_sample['"]/);
-      expect(block).toMatch(/sourceRequired:\s*true/);
-      expect(block).toMatch(/lastVerifiedAt:\s*null/);
-      expect(block).toMatch(/reportWrongNumberEnabled:\s*true/);
-      expect(block).toMatch(/productionStatus:\s*['"]requires_provider_source['"]/);
-      expect(block).toMatch(/displayCode:\s*PENDING_VERIFICATION_PLACEHOLDER/);
-    }
-  });
-
-  it('surfaces the "Sample directory" banner, unverified pill, helper copy, and report-wrong-number affordance', () => {
-    expect(SOURCE).toMatch(/Sample directory — verify with provider before paying/);
-    expect(SOURCE).toMatch(/Unverified sample/);
-    expect(SOURCE).toMatch(/Report wrong number/);
-    // Production-payment helper copy is present (via the constant import)
-    expect(SOURCE).toMatch(/PRODUCTION_PAYMENT_HELPER_COPY/);
-  });
-
-  it('renders the "Provider number pending verification" label, never a raw {biller|selected}.shortcode in JSX', () => {
-    // The page must surface the pending-verification render label somewhere —
-    // it ships either via the explicit literal OR via getDirectoryDisplayCode
-    // (which returns PENDING_VERIFICATION_RENDER_LABEL for every unverified
-    // entry). We assert both: the helper is used, AND the literal sentence is
-    // present in the banner copy.
-    expect(SOURCE).toMatch(/getDirectoryDisplayCode\s*\(/);
-    expect(SOURCE).toMatch(/Provider number pending verification/);
-
-    // No JSX expression node may render `biller.shortcode` or
-    // `selected.shortcode` directly. The two narrowly-permitted uses are the
-    // verified-search filter branch and the internal payment plumbing (toPhone
-    // / recordLedgerDebit) — none of those live inside a JSX `{...}` slot.
-    const forbiddenJsxRenders = [
-      /\{\s*biller\.shortcode\s*\}/,
-      /\{\s*selected\.shortcode\s*\}/,
-      /\{\s*biller\.shortcode\s*[·•]/,
-      /\{\s*selected\.shortcode\s*[·•]/,
-    ];
-    for (const re of forbiddenJsxRenders) {
-      expect(SOURCE, `Paybill.jsx renders a raw shortcode via ${re}`).not.toMatch(re);
-    }
-  });
-
-  it('helper-copy constant resolves to the expected wording', () => {
-    expect(PRODUCTION_PAYMENT_HELPER_COPY).toBe(
-      'Provider source and admin verification required before production payment.',
-    );
-    expect(PENDING_VERIFICATION_RENDER_LABEL).toBe('Provider number pending verification');
-  });
-});
-
 // ── 4. Forbidden overclaim phrases in user-visible UI ────────────────────────
 
 describe('pitch honesty · forbidden overclaim phrases', () => {
@@ -319,11 +260,7 @@ describe('pitch honesty · disclaimers remain wired', () => {
     expect(text).toMatch(/verified provider source/i);
   });
 
-  it('Budget.jsx still surfaces its sample / preview disclaimer', () => {
-    const text = stripJsComments(read('src/pages/Budget.jsx'));
-    expect(text).toMatch(/Preview analysis/i);
-    expect(text).toMatch(/sample data/i);
-  });
+
 });
 
 // ── 6. /platform route is wired and framed honestly ──────────────────────────

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   ShieldCheck, ShieldAlert, TrendingDown,
-  Wifi, AlertTriangle, CheckCircle2, ArrowRight, Zap, Clock,
+  AlertTriangle, CheckCircle2, ArrowRight, Clock,
 } from 'lucide-react';
 import { getRecentThreats } from '@/lib/scamTelemetry';
 import { AI_BRAND } from '@/lib/branding/aiBrand';
@@ -24,40 +24,20 @@ const STATIC_TIMELINE = [
     icon: TrendingDown,
     color: 'text-blue-400',
     bg: 'bg-blue-400/10',
-    title: 'Sample spend event',
-    sub: 'Airtime and bundle preview signal',
+    title: 'Sample activity event',
+    sub: 'Group savings preview signal',
     time: '1 hour ago',
-    path: '/budget',
-  },
-  {
-    id: 't3',
-    icon: Wifi,
-    color: 'text-violet-400',
-    bg: 'bg-violet-400/10',
-    title: 'Sample bundle event',
-    sub: 'Preview renewal signal from sample data',
-    time: '2 hours ago',
-    path: '/bundles',
-  },
-  {
-    id: 't4',
-    icon: CheckCircle2,
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-    title: 'Sample payment event',
-    sub: 'KPLC PayBill preview record',
-    time: 'Yesterday',
     path: '/history',
   },
   {
-    id: 't5',
-    icon: Zap,
-    color: 'text-amber-400',
-    bg: 'bg-amber-400/10',
-    title: 'Sample Fuliza event',
-    sub: 'Provider-verified eligibility required',
+    id: 't3',
+    icon: CheckCircle2,
+    color: 'text-primary',
+    bg: 'bg-primary/10',
+    title: 'Sample treasury event',
+    sub: 'Chama contribution preview record',
     time: 'Yesterday',
-    path: '/fuliza',
+    path: '/history',
   },
 ];
 

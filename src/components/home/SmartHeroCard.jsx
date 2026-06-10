@@ -3,33 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import {
-  Sparkles, ChevronRight, ShieldCheck, TrendingDown,
-  Wifi, Zap,
+  Sparkles, ChevronRight, ShieldCheck, Wallet,
+  CalendarClock,
 } from 'lucide-react';
 import { getFirstNameForGreeting } from '@/lib/formatters/userDisplay';
 
 const HERO_INSIGHTS = [
   {
-    id: 'bundle',
-    icon: Wifi,
-    color: 'text-amber-400',
-    bg: 'bg-amber-400/10',
-    border: 'border-amber-400/15',
-    headline: 'Sample bundle signal',
-    sub: 'Preview suggestion from sample usage data',
-    cta: 'Renew now',
-    path: '/bundles',
-  },
-  {
-    id: 'spend',
-    icon: TrendingDown,
+    id: 'wallet',
+    icon: Wallet,
     color: 'text-primary',
     bg: 'bg-primary/10',
     border: 'border-primary/15',
-    headline: 'Sample spend signal',
-    sub: 'Preview insight from sample airtime history',
-    cta: 'See breakdown',
-    path: '/budget',
+    headline: 'Chama treasury wallet',
+    sub: 'View group savings balance and recent contributions.',
+    cta: 'Open wallet',
+    path: '/wallet',
   },
   {
     id: 'shield',
@@ -43,15 +32,15 @@ const HERO_INSIGHTS = [
     path: '/security',
   },
   {
-    id: 'fuliza',
-    icon: Zap,
+    id: 'schedules',
+    icon: CalendarClock,
     color: 'text-orange-400',
     bg: 'bg-orange-400/10',
     border: 'border-orange-400/15',
-    headline: 'Fuliza readiness preview',
-    sub: 'Limit display requires provider-verified eligibility.',
-    cta: 'View limit',
-    path: '/fuliza',
+    headline: 'Standing orders',
+    sub: 'Manage recurring contributions and scheduled payments.',
+    cta: 'View orders',
+    path: '/schedules',
   },
 ];
 

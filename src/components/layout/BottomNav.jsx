@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, History, MessageSquare, PieChart, User } from 'lucide-react';
+import { Home, History, MessageSquare, Wallet, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AI_BRAND } from '@/lib/branding/aiBrand';
 
@@ -7,7 +7,7 @@ const tabs = [
   { path: '/',        icon: Home,          label: 'Home'           },
   { path: '/history', icon: History,       label: 'History'        },
   { path: '/ai',      icon: MessageSquare, label: AI_BRAND.navLabel },
-  { path: '/budget',  icon: PieChart,      label: 'Budget'         },
+  { path: '/wallet',  icon: Wallet,        label: 'Wallet'         },
   { path: '/profile', icon: User,          label: 'Account', badge: true },
 ];
 
