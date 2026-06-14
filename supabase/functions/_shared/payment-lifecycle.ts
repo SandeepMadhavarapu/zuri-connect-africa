@@ -39,7 +39,7 @@ export type PaymentReconciliationEvent = {
 const SUCCESS_STATUSES = new Set(['succeeded']);
 const FAILURE_STATUSES = new Set(['failed', 'cancelled', 'canceled', 'timeout']);
 const TERMINAL_STATUSES = new Set([...SUCCESS_STATUSES, ...FAILURE_STATUSES, 'review_required', 'reversed']);
-const ALLOWED_PAYMENT_TYPES = new Set(['send', 'paybill', 'airtime', 'bundle', 'fuliza_drawdown']);
+const ALLOWED_PAYMENT_TYPES = new Set(['send', 'paybill', 'airtime', 'bundle', 'fuliza_drawdown', 'chama_contribution']);
 
 export function normalizePhone(phone: string): string {
   const cleaned = String(phone || '').replace(/\s+/g, '').replace(/^\+/, '');
