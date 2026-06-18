@@ -160,12 +160,22 @@ Deno.serve(async (req) => {
       },
     );
 
+    // ── Chama obligation reset sweep (design §4-B) ───────────────────────────
+    // Runs AFTER sweepStuckPendingPayments (which is unchanged above). Any chama
+    // obligation still stuck in 'pending_payment' whose linked pending_payments
+    // row reached a TERMINAL FAILURE state (failed/cancelled/timeout) is reset to
+    // 'due' so the member can retry. Obligations whose pending row is
+    // 'review_required' are deliberately left for ops (§4-B/§4-C). Idempotent:
+    // the UPDATE guards on status='pending_payment'.
+    const chamaObligationReset = await resetStuckChamaObligations(supabaseAdmin);
+
     return Response.json(
       {
         ok: true,
         result: ledgerData,
         stuck_payments: report,
         provider_query: providerQueryApplied,
+        chama_obligation_reset: chamaObligationReset,
       },
       { headers: corsHeaders },
     );
@@ -299,4 +309,84 @@ async function runProviderQuerySweep({
   }
 
   return counters;
+}
+
+// ── Chama obligation reset sweep (design §4-B) ─────────────────────────────
+//
+// Implements the JOIN from design section 4-B without a SQL view:
+//
+//   SELECT ob.id FROM chama_obligations ob
+//   JOIN pending_payments pp ON pp.tx_ref = ob.payment_tx_ref
+//   WHERE ob.status = 'pending_payment'
+//     AND pp.status IN ('failed','cancelled','timeout')
+//
+// For each match: reset chama_obligations to status='due', payment_tx_ref=NULL
+// so the member can retry. The UPDATE is guarded on status='pending_payment'
+// (idempotent — concurrent resets and already-reset rows are no-ops). Obligations
+// whose linked pending row is 'review_required' are NOT reset: those need ops
+// review (§4-B/§4-C). Never touches the ledger.
+async function resetStuckChamaObligations(
+  // deno-lint-ignore no-explicit-any
+  supabaseAdmin: any,
+): Promise<{ scanned: number; reset: number }> {
+  const summary = { scanned: 0, reset: 0 };
+
+  // 1. Obligations stuck in pending_payment with a linked tx_ref.
+  const { data: obligations, error: obErr } = await supabaseAdmin
+    .from('chama_obligations')
+    .select('id, payment_tx_ref')
+    .eq('status', 'pending_payment')
+    .not('payment_tx_ref', 'is', null)
+    .limit(200);
+  if (obErr) {
+    console.error('[reconciliation-job] chama obligation fetch failed', { code: obErr.code });
+    return summary;
+  }
+
+  const rows = (obligations ?? []) as Array<{ id: string; payment_tx_ref: string }>;
+  const txRefs = rows.map((o) => o.payment_tx_ref);
+  if (txRefs.length === 0) return summary;
+  summary.scanned = txRefs.length;
+
+  // 2. Linked pending rows in a TERMINAL FAILURE state. 'review_required' is
+  //    deliberately excluded so ops-held rows are never auto-reset.
+  const { data: failedPending, error: ppErr } = await supabaseAdmin
+    .from('pending_payments')
+    .select('tx_ref')
+    .in('tx_ref', txRefs)
+    .in('status', ['failed', 'cancelled', 'timeout']);
+  if (ppErr) {
+    console.error('[reconciliation-job] chama pending lookup failed', { code: ppErr.code });
+    return summary;
+  }
+
+  const resettableRefs = new Set(
+    ((failedPending ?? []) as Array<{ tx_ref: string }>).map((p) => p.tx_ref),
+  );
+
+  // 3. Reset each matched obligation, idempotently guarded on pending_payment.
+  for (const ob of rows) {
+    if (!resettableRefs.has(ob.payment_tx_ref)) continue;
+    const { data: updated, error: updErr } = await supabaseAdmin
+      .from('chama_obligations')
+      .update({ status: 'due', payment_tx_ref: null, updated_at: new Date().toISOString() })
+      .eq('id', ob.id)
+      .eq('status', 'pending_payment')
+      .select('id');
+    if (updErr) {
+      console.error('[reconciliation-job] chama obligation reset failed', { code: updErr.code });
+      continue;
+    }
+    if (updated && updated.length > 0) summary.reset += 1;
+  }
+
+  console.info(JSON.stringify({
+    ts: new Date().toISOString(),
+    fn: 'reconciliation-job',
+    evt: 'chama_obligation_reset_sweep',
+    scanned: summary.scanned,
+    reset: summary.reset,
+  }));
+
+  return summary;
 }

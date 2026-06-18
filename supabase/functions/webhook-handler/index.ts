@@ -430,6 +430,163 @@ Deno.serve(async (req) => {
       await recordPaymentReconciliationEvent(supabaseAdmin, event);
     };
 
+    // ── CHAMA CONTRIBUTION SETTLEMENT (purely additive branch) ───────────────
+    // Chama contributions settle atomically through the settle_chama_contribution
+    // RPC (ledger debit/credit + pending_payments + chama_obligations in ONE
+    // transaction) instead of finalizeDarajaPayment. EVERY non-chama payment_type
+    // falls through unchanged to the finalizeDarajaPayment call below. All shared
+    // security checks (IP, HMAC, nonce, webhook_events de-dup) already ran above
+    // for BOTH paths — a chama duplicate callback is caught by the same
+    // webhook_events idempotency_key de-dup (lines 331-365 / 375-377) before it
+    // ever reaches this branch, exactly like a non-chama duplicate.
+    if (pending.payment_type === 'chama_contribution') {
+      const chamaStatus = callbackStatus(callback);
+
+      const markEventProcessed = (eventStatus: string) =>
+        supabaseAdmin
+          .from('webhook_events')
+          .update({ status: eventStatus, processed_at: new Date().toISOString() })
+          .eq('source', 'mpesa_callback')
+          .eq('idempotency_key', idempotencyKey);
+
+      // Mirror finalizeDarajaPayment's review_required path: set pending to
+      // review_required (NO ledger post, NEVER succeeded), record a manual-review
+      // reconciliation event, write a critical audit event. The obligation is
+      // left in 'pending_payment' — ops resolves it; the §4-B reset sweep
+      // deliberately ignores review_required pending rows.
+      const holdForReview = async (reason: string, eventType: string) => {
+        await updatePendingPayment(pending.id, {
+          status: 'review_required',
+          result_code: callback.resultCode,
+          result_desc: callback.resultDesc,
+          provider_receipt: callback.receiptNumber,
+          callback_payload_hash: payloadHash,
+          raw_callback: callback,
+          updated_at: new Date().toISOString(),
+        });
+        await recordReconciliationEvent({
+          pending_payment_id: pending.id,
+          external_reference: callbackExternalReference(callback),
+          provider_status: chamaStatus,
+          internal_status: 'review_required',
+          amount_match: null,
+          phone_match: null,
+          requires_manual_review: true,
+          raw_provider_payload_hash: payloadHash,
+          event_type: eventType,
+          reason,
+        });
+        await writeAuditEvent(supabaseAdmin, {
+          event_type: 'webhook.chama_settlement_review',
+          event_category: 'financial',
+          severity: 'critical',
+          actor_id: pending.user_id,
+          actor_type: 'service',
+          target_type: 'pending_payments',
+          target_id: pending.id,
+          action: 'hold_chama_payment_for_reconciliation',
+          outcome: 'pending',
+          payload: { tx_ref: pending.tx_ref, reason, event_type: eventType },
+          correlation_id: pending.tx_ref,
+        });
+      };
+
+      if (chamaStatus === 'succeeded') {
+        const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc(
+          'settle_chama_contribution',
+          {
+            p_tx_ref:       pending.tx_ref,
+            p_receipt:      callback.receiptNumber,
+            p_settled_at:   new Date().toISOString(),
+            p_payload_hash: payloadHash,
+          },
+        );
+
+        if (rpcError) {
+          // Network/exception reaching the RPC: the transaction either never ran
+          // or rolled back, so the pending row is still pre-call status. Hold for
+          // review (do NOT mark succeeded) and return 500 so the reconciliation
+          // backstop / Daraja retry can re-drive it.
+          await holdForReview('settle_chama_contribution RPC error', 'chama_settlement_rpc_error');
+          await markEventProcessed('failed');
+          return json({ ok: false, error: 'CHAMA_SETTLEMENT_FAILED', idempotency_key: idempotencyKey }, 500);
+        }
+
+        const r = (rpcResult ?? {}) as Record<string, unknown>;
+
+        if (r.ok === true) {
+          // Settled, duplicate, or no_obligation — all consistent (the RPC is
+          // atomic + idempotent). Ledger + obligation are correct.
+          await markEventProcessed('processed');
+          return json({ ok: true, ...r, status: 'succeeded', idempotency_key: idempotencyKey });
+        }
+
+        if (r.error === 'PENDING_NOT_FOUND') {
+          // The RPC could not see the pending row (should not happen — we just
+          // resolved it). Nothing to settle: log + 200.
+          await markEventProcessed('processed');
+          return json({ ok: true, status: 'pending_not_found', idempotency_key: idempotencyKey });
+        }
+
+        // AMOUNT_MISMATCH or LEDGER_POST_FAILED: the RPC rolled back, no ledger
+        // was posted, the pending row is still pre-call. Mark review_required
+        // explicitly — mirror the non-chama amount-mismatch path. NOT succeeded.
+        const eventType = r.error === 'AMOUNT_MISMATCH' ? 'amount_mismatch' : 'ledger_post_failed';
+        await holdForReview(`settle_chama_contribution returned ${String(r.error)}`, eventType);
+        await markEventProcessed('processed');
+        return json({ ok: true, status: 'review_required', error: r.error, reviewRequired: true, idempotency_key: idempotencyKey });
+      }
+
+      // ── FAILED / CANCELLED / TIMEOUT chama callback (ResultCode != 0) ────────
+      // No receipt → the settlement RPC is NEVER called. Mark the pending row
+      // failed (mirror finalizeDarajaPayment's terminal-failure patch) and reset
+      // the obligation directly so the member can retry immediately. The §4-B
+      // reconciliation sweep is the backstop if this UPDATE races.
+      await updatePendingPayment(pending.id, {
+        status: chamaStatus,
+        result_code: callback.resultCode,
+        result_desc: callback.resultDesc,
+        provider_receipt: callback.receiptNumber,
+        callback_payload_hash: payloadHash,
+        raw_callback: callback,
+        updated_at: new Date().toISOString(),
+      });
+      const { error: resetErr } = await supabaseAdmin
+        .from('chama_obligations')
+        .update({ status: 'due', payment_tx_ref: null, updated_at: new Date().toISOString() })
+        .eq('payment_tx_ref', pending.tx_ref)
+        .eq('status', 'pending_payment');
+      if (resetErr) console.error('[webhook-handler] chama obligation reset failed', resetErr);
+      await recordReconciliationEvent({
+        pending_payment_id: pending.id,
+        external_reference: callbackExternalReference(callback),
+        provider_status: chamaStatus,
+        internal_status: chamaStatus,
+        amount_match: null,
+        phone_match: null,
+        requires_manual_review: false,
+        raw_provider_payload_hash: payloadHash,
+        event_type: 'terminal_failure',
+        reason: `chama callback reported ${chamaStatus}`,
+      });
+      await writeAuditEvent(supabaseAdmin, {
+        event_type: `payment.webhook.${chamaStatus}`,
+        event_category: 'financial',
+        severity: chamaStatus === 'failed' ? 'warn' : 'info',
+        actor_id: pending.user_id,
+        actor_type: 'service',
+        target_type: 'pending_payments',
+        target_id: pending.id,
+        action: 'finalize_chama_payment_without_ledger',
+        outcome: 'failure',
+        payload: { tx_ref: pending.tx_ref, provider_status: chamaStatus },
+        correlation_id: pending.tx_ref,
+      });
+      await markEventProcessed('processed');
+      return json({ ok: true, status: chamaStatus, ledgerPosted: false, idempotency_key: idempotencyKey });
+    }
+    // ── END CHAMA BRANCH — non-chama payments fall through UNCHANGED below ────
+
     const result = await finalizeDarajaPayment({
       callback,
       pending,
