@@ -17,6 +17,7 @@ import AppShell from './components/layout/AppShell';
 // Pages
 import Home from './pages/Home';
 import History from './pages/History';
+import ChamaHome from './pages/Chama';
 import AI from './pages/AI';
 import Profile from './pages/Profile';
 import Notifications from './pages/Notifications';
@@ -134,6 +135,7 @@ function AuthenticatedApp() {
           <Route element={<AppShell />}>
             <Route path="/" element={<Home />} />
             <Route path="/history" element={<History />} />
+            <Route path="/chama" element={<ChamaHome />} />
             <Route path="/ai" element={<AI />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />

@@ -4,6 +4,11 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
+/* Hesabu (chama) identity fonts — scoped to the .hesabu-theme subtree only.
+   Inter = body, JetBrains Mono = money/ledger figures. Loading them here does
+   NOT change Zuri pages: no global utility names these families. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @layer base {
   :root {
     --background: 0 0% 99%;
@@ -78,6 +83,36 @@
     --border: 222 14% 12%;
     --input: 222 14% 10%;
     --ring: 142 72% 36%;
+  }
+
+  /* ── Hesabu theme ──────────────────────────────────────────────────────
+     Scoped identity layer for the /chama (Hesabu) subtree. Tokens are defined
+     ONLY on .hesabu-theme so they never override the global Zuri tokens above.
+     Tailwind `hesabu.*` colors map to these vars; outside this class the vars
+     are undefined and the utilities are inert. */
+  .hesabu-theme {
+    --hesabu-ink:        #0C1410;
+    --hesabu-surface:    #14211B;
+    --hesabu-surface-2:  #1B2C24;
+    --hesabu-paper:      #E8E4D8;
+    --hesabu-muted:      #8A9690;
+    --hesabu-emerald:    #1F9D6B;
+    --hesabu-emerald-dim:#137A51;
+    --hesabu-brass:      #C9A227;
+    --hesabu-line:       #243A30;
+    --hesabu-danger:     #D9534F;
+
+    color: var(--hesabu-paper);
+    font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
+  }
+
+  /* Route-scoped ink fill for AppShell's scroll container on /chama only.
+     AppShell's bottom-nav clearance padding sits outside the page box, so the
+     page's own ink can't reach it. --hesabu-ink is scoped to .hesabu-theme and
+     not in scope on <main>, so the literal (mirrors --hesabu-ink #0C1410) is
+     used here. Gated by the data attribute, which only /chama sets. */
+  .app-scrollbar[data-chama-route] {
+    background-color: #0C1410;
   }
 }
 
@@ -629,4 +664,22 @@
   .startup-status-line:first-child {
     opacity: 1;
   }
+}
+
+/* ── Hesabu scoped utilities ──────────────────────────────────────────────
+   Plain (unlayered) rules so they win over Tailwind's layered utilities by
+   specificity/cascade WITHOUT touching the global font-mono token. Existing
+   Zuri pages that use `font-mono` keep the default monospace stack; only money
+   figures inside .hesabu-theme render in JetBrains Mono with tabular nums. */
+.hesabu-theme .font-mono,
+.hesabu-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Always-visible keyboard focus inside the Hesabu subtree. */
+.hesabu-theme :focus-visible {
+  outline: 2px solid var(--hesabu-emerald);
+  outline-offset: 2px;
+  border-radius: 4px;
 }

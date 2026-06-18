@@ -7,6 +7,11 @@ module.exports = {
       fontFamily: {
         jakarta: ['Plus Jakarta Sans', 'sans-serif'],
         grotesk: ['Space Grotesk', 'sans-serif'],
+        // Hesabu identity. `display` is additive (no existing `font-display`
+        // usage). Money mono is intentionally NOT added as `fontFamily.mono`
+        // here — overriding the global mono token would restyle Zuri audit/admin
+        // pages that use `font-mono`. It is scoped in index.css instead.
+        display: ['Space Grotesk', 'sans-serif'],
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -66,6 +71,21 @@ module.exports = {
           'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
+        },
+        // Hesabu (chama) identity — maps to the .hesabu-theme scoped CSS vars
+        // in src/index.css. These utilities are inert outside .hesabu-theme,
+        // so they cannot affect existing Zuri pages.
+        hesabu: {
+          ink: 'var(--hesabu-ink)',
+          surface: 'var(--hesabu-surface)',
+          'surface-2': 'var(--hesabu-surface-2)',
+          paper: 'var(--hesabu-paper)',
+          muted: 'var(--hesabu-muted)',
+          emerald: 'var(--hesabu-emerald)',
+          'emerald-dim': 'var(--hesabu-emerald-dim)',
+          brass: 'var(--hesabu-brass)',
+          line: 'var(--hesabu-line)',
+          danger: 'var(--hesabu-danger)'
         }
       },
       keyframes: {

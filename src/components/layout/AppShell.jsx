@@ -63,6 +63,7 @@ export default function AppShell() {
   const location  = useLocation();
   const prevPath  = useRef(location.pathname);
   const hideNav   = ['/onboarding', '/pin', '/biometric'].includes(location.pathname);
+  const isChamaRoute = location.pathname.startsWith('/chama');
   const { user }  = useAuth();
   const { isLocked, showWarning, unlock, dismissWarning } = useSessionSecurity(user?.email || 'anonymous');
   const [warningCountdown, setWarningCountdown] = useState(60);
@@ -110,7 +111,10 @@ export default function AppShell() {
         </div>
 
         {/* Scroll container */}
-        <main className="app-scrollbar flex-1 overflow-y-auto overflow-x-hidden relative z-10 min-h-0">
+        <main
+          className="app-scrollbar flex-1 overflow-y-auto overflow-x-hidden relative z-10 min-h-0"
+          data-chama-route={isChamaRoute ? '' : undefined}
+        >
           <ContentBoundary key={location.pathname}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div

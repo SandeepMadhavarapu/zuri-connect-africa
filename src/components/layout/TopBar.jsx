@@ -5,6 +5,7 @@ import { AI_BRAND } from '@/lib/branding/aiBrand';
 const routeTitles = {
   '/': null,
   '/history': 'Transactions',
+  '/chama': 'Hesabu',
   '/profile': 'Account',
   '/ai': AI_BRAND.routeTitle,
   '/notifications': 'Notifications',
