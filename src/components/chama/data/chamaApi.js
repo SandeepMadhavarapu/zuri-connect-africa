@@ -68,6 +68,63 @@ export async function createChamaGroup({ name, description, currency }) {
 }
 
 /**
+ * Open a contribution cycle for a group via the live Edge Function.
+ *
+ * Mirrors createChamaGroup exactly: invoke `create-contribution-cycle` (JWT
+ * auto-attached by the browser client — we NEVER send a user id), and on a
+ * non-2xx recover the server's error code from `error.context.json()` so the
+ * caller can show friendly copy. The SERVER remains the source of truth; amounts
+ * are sent in KES and converted to cents server-side.
+ *
+ * @param {{ groupId: string, name: string, amountKes: number|string,
+ *   dueDate: string, graceDays?: number }} input
+ * @returns {Promise<{ cycle: object, obligationCount: number }>}
+ * @throws {Error & { code?: string, status?: number }} on any failure.
+ */
+export async function createContributionCycle({ groupId, name, amountKes, dueDate, graceDays }) {
+  const supabase = getSupabaseBrowserClient();
+
+  const body = {
+    group_id: groupId,
+    name,
+    amount_kes: Number(amountKes),
+    due_date: dueDate,
+  };
+  // Only send grace_days when explicitly provided; otherwise the server default
+  // (3) applies. The dialog does not expose this field yet.
+  if (graceDays !== undefined && graceDays !== null) body.grace_days = graceDays;
+
+  const { data, error } = await supabase.functions.invoke('create-contribution-cycle', {
+    body,
+  });
+
+  // Non-2xx: supabase-js sets `error` (FunctionsHttpError) with the raw Response
+  // on `error.context`. Read the JSON body to recover the error code.
+  if (error) {
+    const status = error?.context?.status;
+    let code = null;
+    try {
+      const payload = await error.context.json();
+      code = payload?.error ?? null;
+    } catch {
+      /* body wasn't JSON — fall back to status-based messaging */
+    }
+    const err = new Error(code || 'REQUEST_FAILED');
+    err.code = code;
+    err.status = status;
+    throw err;
+  }
+
+  if (!data?.ok || !data.cycle) {
+    const err = new Error(data?.error || 'REQUEST_FAILED');
+    err.code = data?.error ?? null;
+    throw err;
+  }
+
+  return { cycle: data.cycle, obligationCount: Number(data.obligation_count ?? 0) };
+}
+
+/**
  * Fetch the current user's chamas (groups they are an ACTIVE member of) and
  * shape each one for <ChamaListItem>. New groups have no cycle/obligations yet,
  * so pooled = 0, no next obligation, and hasActiveCycle = false — handled

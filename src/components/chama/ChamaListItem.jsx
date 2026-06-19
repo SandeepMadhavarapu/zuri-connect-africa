@@ -1,14 +1,20 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import ChamaCard from '@/components/chama/ui/ChamaCard';
 import Money from '@/components/chama/ui/Money';
 import StatusPill from '@/components/chama/ui/StatusPill';
 import Eyebrow from '@/components/chama/ui/Eyebrow';
 import ContributionRing from '@/components/chama/ContributionRing';
+import OpenCycleDialog from '@/components/chama/OpenCycleDialog';
 import { pluralize } from '@/lib/branding/hesabu';
 
 const MAX_AVATARS = 4;
+
+// Roles permitted to open a contribution cycle (mirrors the Edge Function's
+// AUTHORIZED_ROLES). A plain member can never open one.
+const CYCLE_ROLES = new Set(['chair', 'treasurer']);
 
 const ROLE_CLS = {
   chair: 'border-hesabu-emerald bg-hesabu-emerald/10 text-hesabu-emerald',
@@ -44,6 +50,7 @@ function formatDueDate(iso) {
  */
 export default function ChamaListItem({ chama }) {
   const {
+    id,
     name,
     role = 'member',
     pooledCents = 0,
@@ -54,9 +61,15 @@ export default function ChamaListItem({ chama }) {
     hasActiveCycle = true,
   } = chama;
 
+  const [cycleOpen, setCycleOpen] = React.useState(false);
+
   const shown = members.slice(0, MAX_AVATARS);
   const overflow = Math.max(0, (membersTotal || members.length) - shown.length);
   const dueLabel = nextObligation ? formatDueDate(nextObligation.dueDate) : null;
+
+  // Only a chair/treasurer of a group with no open cycle may open one. A plain
+  // member never sees the button; once a cycle is active, nobody does.
+  const canOpenCycle = !hasActiveCycle && CYCLE_ROLES.has(role);
 
   return (
     <ChamaCard className="p-4">
@@ -93,9 +106,20 @@ export default function ChamaListItem({ chama }) {
               <StatusPill status={nextObligation.status} />
             </>
           ) : (
-            <p className="text-sm text-hesabu-muted">
-              {hasActiveCycle ? 'All settled for this cycle.' : 'No active cycle yet.'}
-            </p>
+            <div className="space-y-2.5">
+              <p className="text-sm text-hesabu-muted">
+                {hasActiveCycle ? 'All settled for this cycle.' : 'No active cycle yet.'}
+              </p>
+              {canOpenCycle && (
+                <Button
+                  size="sm"
+                  onClick={() => setCycleOpen(true)}
+                  className="bg-hesabu-emerald font-semibold text-hesabu-ink shadow-[0_4px_14px_-4px_rgba(31,157,107,0.45)] transition-shadow hover:bg-hesabu-emerald-dim hover:shadow-[0_8px_24px_-6px_rgba(31,157,107,0.6)]"
+                >
+                  Open a cycle
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -128,6 +152,18 @@ export default function ChamaListItem({ chama }) {
           {pluralize(membersTotal, 'member')}
         </span>
       </div>
+
+      {/* Each card owns its own cycle dialog, scoped to THIS group. On success
+          the dialog invalidates the home query, so this card refetches and
+          shows the live cycle + the user's obligation + the ring. */}
+      {canOpenCycle && (
+        <OpenCycleDialog
+          open={cycleOpen}
+          onOpenChange={setCycleOpen}
+          groupId={id}
+          groupName={name}
+        />
+      )}
     </ChamaCard>
   );
 }
