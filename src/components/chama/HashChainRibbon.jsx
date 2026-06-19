@@ -25,6 +25,7 @@ const STEP = 320; // ms between successive blocks locking in
 export default function HashChainRibbon({ blocks = [], className }) {
   const reduced = usePrefersReducedMotion();
   const animate = !reduced && blocks.length > 0;
+  const isEmpty = blocks.length === 0;
 
   return (
     <section className={cn('space-y-3', className)}>
@@ -37,8 +38,42 @@ export default function HashChainRibbon({ blocks = [], className }) {
         </p>
       </div>
 
+      {isEmpty && (
+        // Preview state: the same chain motif at low opacity, plus a caption.
+        // Honest — no fabricated amounts/hashes — but keeps the signature
+        // section meaningful before any contribution has settled.
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-hesabu-line bg-hesabu-surface px-5 py-6 text-center">
+          <svg width="200" height="44" viewBox="0 0 200 44" fill="none" aria-hidden="true" className="opacity-30">
+            {[8, 78, 148].map((x) => (
+              <rect
+                key={x}
+                x={x}
+                y="8"
+                width="44"
+                height="28"
+                rx="8"
+                stroke="var(--hesabu-line)"
+                strokeWidth="1.5"
+                fill="var(--hesabu-surface-2)"
+              />
+            ))}
+            {[60, 130].map((x) => (
+              <g key={x} transform={`translate(${x},0)`}>
+                <line x1="-8" y1="22" x2="26" y2="22" stroke="var(--hesabu-emerald-dim)" strokeWidth="1.5" />
+                <rect x="2" y="16" width="9" height="12" rx="4.5" stroke="var(--hesabu-brass)" strokeWidth="1.5" fill="var(--hesabu-ink)" />
+                <rect x="7" y="16" width="9" height="12" rx="4.5" stroke="var(--hesabu-brass)" strokeWidth="1.5" fill="none" />
+              </g>
+            ))}
+          </svg>
+          <p className="max-w-xs text-sm text-hesabu-muted">
+            No settled contributions yet — each one will lock into the chain here.
+          </p>
+        </div>
+      )}
+
       {/* Negative margin + padding lets the row bleed to the screen edges and
           scroll on mobile without breaking the page layout at 360px. */}
+      {!isEmpty && (
       <div className="hcr-scroll -mx-5 overflow-x-auto px-5 pb-2">
         <ol className="flex w-max items-stretch">
           {blocks.map((b, i) => {
@@ -133,6 +168,7 @@ export default function HashChainRibbon({ blocks = [], className }) {
           })}
         </ol>
       </div>
+      )}
 
       {/* Scoped styles: keyframes + the locked-in animations. Hidden→final, with
           animation-fill-mode both so the start frame holds before the delay.

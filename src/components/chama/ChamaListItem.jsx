@@ -49,6 +49,7 @@ export default function ChamaListItem({ chama }) {
     membersPaid = 0,
     membersTotal = 0,
     members = [],
+    hasActiveCycle = true,
   } = chama;
 
   const shown = members.slice(0, MAX_AVATARS);
@@ -92,7 +93,9 @@ export default function ChamaListItem({ chama }) {
               <StatusPill status={nextObligation.status} />
             </>
           ) : (
-            <p className="text-sm text-hesabu-muted">All settled for this cycle.</p>
+            <p className="text-sm text-hesabu-muted">
+              {hasActiveCycle ? 'All settled for this cycle.' : 'No active cycle yet.'}
+            </p>
           )}
         </div>
 
@@ -121,7 +124,9 @@ export default function ChamaListItem({ chama }) {
             </span>
           )}
         </div>
-        <span className="text-xs text-hesabu-muted">{membersTotal} members</span>
+        <span className="text-xs text-hesabu-muted">
+          {membersTotal} {membersTotal === 1 ? 'member' : 'members'}
+        </span>
       </div>
     </ChamaCard>
   );
