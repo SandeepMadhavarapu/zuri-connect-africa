@@ -25,14 +25,14 @@ export const HESABU_BRAND = Object.freeze({
  */
 export const HESABU_COLORS = Object.freeze({
   ink: '#0C1410',          // app background — warm green-black
-  surface: '#14211B',      // cards / raised
-  surface2: '#1B2C24',     // hover / nested
+  surface: '#1E3127',      // cards / raised
+  surface2: '#2A4033',     // hover / nested
   paper: '#E8E4D8',        // primary text — warm off-white
   muted: '#8A9690',        // secondary text
   emerald: '#1F9D6B',      // primary action, money, trust
   emeraldDim: '#137A51',   // pressed / hover
   brass: '#C9A227',        // settled / confirmed states ONLY, sparing
-  line: '#243A30',         // hairline borders — ledger rules
+  line: '#2F4A3C',         // hairline borders — ledger rules
   danger: '#D9534F',       // overdue / failed
 });
 
@@ -71,4 +71,23 @@ export function formatKesFromCents(cents, { withSymbol = true } = {}) {
   });
 
   return withSymbol ? `KES ${formatted}` : formatted;
+}
+
+/**
+ * Count-aware noun for display strings.
+ *
+ *   pluralize(1, 'member')          → "1 member"
+ *   pluralize(3, 'member')          → "3 members"
+ *   pluralize(1, 'chama', 'chamas') → "1 chama"
+ *
+ * Defaults the plural to `${singular}s`; pass an explicit plural for irregulars.
+ * Returns the count alongside the noun so call sites don't re-interpolate.
+ *
+ * @param {number} count
+ * @param {string} singular
+ * @param {string} [plural]
+ * @returns {string}
+ */
+export function pluralize(count, singular, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
 }

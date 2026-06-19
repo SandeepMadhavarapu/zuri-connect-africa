@@ -13,9 +13,9 @@ const ChamaCard = React.forwardRef(({ className, children, ...props }, ref) => (
     ref={ref}
     className={cn(
       'rounded-2xl border border-hesabu-line bg-hesabu-surface text-hesabu-paper',
-      'shadow-[0_1px_2px_rgba(0,0,0,0.45)]',
+      'hesabu-elevated hesabu-elevated-hover',
       'transition-[transform,box-shadow,background-color] duration-200 ease-out',
-      'hover:-translate-y-0.5 hover:bg-hesabu-surface-2 hover:shadow-[0_12px_30px_rgba(0,0,0,0.5)]',
+      'hover:-translate-y-0.5 hover:bg-hesabu-surface-2',
       'motion-reduce:transition-none motion-reduce:hover:translate-y-0',
       className,
     )}

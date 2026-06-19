@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 
 import { Button } from '@/components/ui/button';
 import { HESABU_BRAND } from '@/lib/branding/hesabu';
+import Eyebrow from '@/components/chama/ui/Eyebrow';
 import TreasuryHero from '@/components/chama/TreasuryHero';
 import HashChainRibbon from '@/components/chama/HashChainRibbon';
 import ChamaListItem from '@/components/chama/ChamaListItem';
@@ -26,17 +27,9 @@ import { useAuth } from '@/lib/AuthContext';
  * contained. The Create dialog is portalled, so it sets `.hesabu-theme` itself.
  */
 
-function SectionLabel({ children }) {
-  return (
-    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-muted">
-      {children}
-    </p>
-  );
-}
-
 function CardSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-hesabu-line bg-hesabu-surface p-4">
+    <div className="hesabu-elevated animate-pulse rounded-2xl border border-hesabu-line bg-hesabu-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-2">
           <div className="h-5 w-40 rounded bg-hesabu-surface-2" />
@@ -59,9 +52,9 @@ function CardSkeleton() {
 function LoadingState() {
   return (
     <div className="space-y-8">
-      <div className="h-40 animate-pulse rounded-3xl border border-hesabu-line bg-hesabu-surface" />
+      <div className="hesabu-elevated h-40 animate-pulse rounded-3xl border border-hesabu-line bg-hesabu-surface" />
       <div className="space-y-4">
-        <SectionLabel>Your chamas</SectionLabel>
+        <Eyebrow>Your chamas</Eyebrow>
         <div className="space-y-4">
           <CardSkeleton />
           <CardSkeleton />
@@ -73,7 +66,7 @@ function LoadingState() {
 
 function ErrorState({ onRetry }) {
   return (
-    <div className="flex flex-col items-center rounded-3xl border border-hesabu-line bg-hesabu-surface px-6 py-12 text-center">
+    <div className="hesabu-elevated flex flex-col items-center rounded-3xl border border-hesabu-line bg-hesabu-surface px-6 py-12 text-center">
       <h2 className="font-display text-xl font-bold text-hesabu-paper">
         Couldn&apos;t load your chamas
       </h2>
@@ -95,14 +88,14 @@ function PrimaryActions({ onCreate, onJoin }) {
     <div className="flex flex-col gap-3 sm:flex-row">
       <Button
         onClick={onCreate}
-        className="bg-hesabu-emerald text-hesabu-ink hover:bg-hesabu-emerald-dim sm:flex-1"
+        className="bg-hesabu-emerald font-semibold text-hesabu-ink shadow-[0_4px_14px_-4px_rgba(31,157,107,0.45)] transition-shadow hover:bg-hesabu-emerald-dim hover:shadow-[0_8px_24px_-6px_rgba(31,157,107,0.6)] sm:flex-1"
       >
         Create a chama
       </Button>
       <Button
         variant="outline"
         onClick={onJoin}
-        className="border-hesabu-line bg-transparent text-hesabu-paper hover:bg-hesabu-surface-2 hover:text-hesabu-paper sm:flex-1"
+        className="border-hesabu-line bg-hesabu-surface-2 font-medium text-hesabu-paper hover:border-hesabu-emerald hover:bg-hesabu-surface-2 hover:text-hesabu-paper sm:flex-1"
       >
         Join with code
       </Button>
@@ -148,7 +141,7 @@ export default function ChamaHome() {
     body = <EmptyState onCreate={openCreate} onJoin={handleJoin} />;
   } else {
     body = (
-      <div className="space-y-8">
+      <div className="space-y-10">
         {/* 1 — Treasury hero */}
         <TreasuryHero
           totalCents={totalCents}
@@ -163,18 +156,19 @@ export default function ChamaHome() {
 
         <div className="h-px bg-hesabu-line" />
 
-        {/* 3 — Your chamas */}
+        {/* 3 — Your chamas, with the primary actions anchored directly beneath
+            the cards (not floating in a void below). */}
         <section className="space-y-4">
-          <SectionLabel>Your chamas</SectionLabel>
+          <Eyebrow tick>Your chamas</Eyebrow>
           <div className="space-y-4">
             {chamas.map((c) => (
               <ChamaListItem key={c.id} chama={c} />
             ))}
           </div>
+          <div className="pt-2">
+            <PrimaryActions onCreate={openCreate} onJoin={handleJoin} />
+          </div>
         </section>
-
-        {/* 4 — Primary actions */}
-        <PrimaryActions onCreate={openCreate} onJoin={handleJoin} />
       </div>
     );
   }

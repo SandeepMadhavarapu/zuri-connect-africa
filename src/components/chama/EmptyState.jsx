@@ -53,7 +53,7 @@ function ChainMotif() {
  */
 export default function EmptyState({ onCreate, onJoin }) {
   return (
-    <div className="flex flex-col items-center rounded-3xl border border-hesabu-line bg-hesabu-surface px-6 py-12 text-center">
+    <div className="hesabu-elevated flex flex-col items-center rounded-3xl border border-hesabu-line bg-hesabu-surface px-6 py-12 text-center">
       <ChainMotif />
 
       <h2 className="mt-6 font-display text-2xl font-bold text-hesabu-paper">
@@ -66,14 +66,14 @@ export default function EmptyState({ onCreate, onJoin }) {
       <div className="mt-7 flex w-full max-w-xs flex-col gap-3 sm:flex-row sm:justify-center">
         <Button
           onClick={onCreate}
-          className="bg-hesabu-emerald text-hesabu-ink hover:bg-hesabu-emerald-dim"
+          className="bg-hesabu-emerald font-semibold text-hesabu-ink shadow-[0_4px_14px_-4px_rgba(31,157,107,0.45)] transition-shadow hover:bg-hesabu-emerald-dim hover:shadow-[0_8px_24px_-6px_rgba(31,157,107,0.6)]"
         >
           Create a chama
         </Button>
         <Button
           variant="outline"
           onClick={onJoin}
-          className="border-hesabu-line bg-transparent text-hesabu-paper hover:bg-hesabu-surface-2 hover:text-hesabu-paper"
+          className="border-hesabu-line bg-hesabu-surface-2 font-medium text-hesabu-paper hover:border-hesabu-emerald hover:bg-hesabu-surface-2 hover:text-hesabu-paper"
         >
           Join with code
         </Button>

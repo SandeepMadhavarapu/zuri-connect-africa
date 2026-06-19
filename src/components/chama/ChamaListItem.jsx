@@ -4,13 +4,15 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ChamaCard from '@/components/chama/ui/ChamaCard';
 import Money from '@/components/chama/ui/Money';
 import StatusPill from '@/components/chama/ui/StatusPill';
+import Eyebrow from '@/components/chama/ui/Eyebrow';
 import ContributionRing from '@/components/chama/ContributionRing';
+import { pluralize } from '@/lib/branding/hesabu';
 
 const MAX_AVATARS = 4;
 
 const ROLE_CLS = {
-  chair: 'border-hesabu-emerald text-hesabu-emerald',
-  treasurer: 'border-hesabu-emerald text-hesabu-emerald',
+  chair: 'border-hesabu-emerald bg-hesabu-emerald/10 text-hesabu-emerald',
+  treasurer: 'border-hesabu-emerald bg-hesabu-emerald/10 text-hesabu-emerald',
   member: 'border-hesabu-line text-hesabu-muted',
 };
 
@@ -70,7 +72,7 @@ export default function ChamaListItem({ chama }) {
         </div>
         <div className="shrink-0 text-right">
           <Money cents={pooledCents} className="text-base font-semibold" />
-          <p className="mt-0.5 text-[11px] uppercase tracking-wide text-hesabu-muted">Pooled</p>
+          <Eyebrow className="mt-0.5">Pooled</Eyebrow>
         </div>
       </div>
 
@@ -79,9 +81,7 @@ export default function ChamaListItem({ chama }) {
       {/* Body: obligation + ring on the right */}
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0 space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-muted">
-            Next contribution
-          </p>
+          <Eyebrow>Next contribution</Eyebrow>
           {nextObligation ? (
             <>
               <div className="flex items-baseline gap-2">
@@ -101,7 +101,7 @@ export default function ChamaListItem({ chama }) {
 
         <div className="flex flex-col items-center gap-1.5">
           <ContributionRing paid={membersPaid} total={membersTotal} />
-          <span className="text-[10px] uppercase tracking-wide text-hesabu-muted">paid</span>
+          <Eyebrow as="span">paid</Eyebrow>
         </div>
       </div>
 
@@ -125,7 +125,7 @@ export default function ChamaListItem({ chama }) {
           )}
         </div>
         <span className="text-xs text-hesabu-muted">
-          {membersTotal} {membersTotal === 1 ? 'member' : 'members'}
+          {pluralize(membersTotal, 'member')}
         </span>
       </div>
     </ChamaCard>

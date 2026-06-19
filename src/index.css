@@ -92,14 +92,14 @@
      are undefined and the utilities are inert. */
   .hesabu-theme {
     --hesabu-ink:        #0C1410;
-    --hesabu-surface:    #14211B;
-    --hesabu-surface-2:  #1B2C24;
+    --hesabu-surface:    #1E3127;
+    --hesabu-surface-2:  #2A4033;
     --hesabu-paper:      #E8E4D8;
     --hesabu-muted:      #8A9690;
     --hesabu-emerald:    #1F9D6B;
     --hesabu-emerald-dim:#137A51;
     --hesabu-brass:      #C9A227;
-    --hesabu-line:       #243A30;
+    --hesabu-line:       #2F4A3C;
     --hesabu-danger:     #D9534F;
 
     color: var(--hesabu-paper);
@@ -675,6 +675,36 @@
 .hesabu-mono {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   font-variant-numeric: tabular-nums;
+}
+
+/* Card elevation for the Hesabu surface. One treatment shared by every card so
+   they read consistently lifted off the ink page: a soft, low-opacity,
+   large-blur shadow (premium dark-UI depth, not a hard drop shadow) plus a
+   4%-paper inset top hairline that gives the border more presence without
+   changing its colour. Plain (unlayered) rule so it wins over Tailwind's
+   layered utilities, scoped to .hesabu-theme so it can't leak to Zuri. */
+.hesabu-theme .hesabu-elevated {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 20px 44px -10px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(232, 228, 216, 0.10);
+}
+
+/* Deeper lift for interactive cards on hover. Higher specificity than the base
+   rule above (both unlayered) so it wins when hovered; the translate itself
+   stays a Tailwind utility on the element and is reduced-motion gated there. */
+.hesabu-theme .hesabu-elevated-hover:hover {
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.55),
+    0 30px 56px -12px rgba(0, 0, 0, 0.78),
+    inset 0 1px 0 rgba(232, 228, 216, 0.12);
+}
+
+/* Hero "feature" surface: a subtle top-lighter → surface gradient that reads as
+   a premium panel distinct from the plain list cards. Scoped to .hesabu-theme
+   so it can't leak to Zuri; pairs with the border + .hesabu-elevated shadow. */
+.hesabu-theme .hesabu-hero {
+  background-image: linear-gradient(160deg, #2B4234 0%, var(--hesabu-surface) 58%);
 }
 
 /* Always-visible keyboard focus inside the Hesabu subtree. */

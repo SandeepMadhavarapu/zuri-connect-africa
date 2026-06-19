@@ -23,9 +23,18 @@ export default function TopBar() {
   const location  = useLocation();
   const title     = routeTitles[location.pathname];
   const isHome    = location.pathname === '/';
+  // Chama (Hesabu) routes adopt the dark surface so the bar flows into the hero
+  // instead of leaving a white→dark seam. Adding `hesabu-theme` here also brings
+  // the --hesabu-* vars into scope (TopBar renders above the page's themed
+  // subtree). Zuri routes never take this branch, so they're untouched.
+  const isChama   = location.pathname.startsWith('/chama');
+
+  const rootCls = isChama
+    ? 'hesabu-theme bg-hesabu-ink border-b border-hesabu-line px-4 flex items-center justify-between h-[60px] shrink-0 z-20 relative'
+    : 'bg-background/90 backdrop-blur-xl border-b border-primary/10 px-4 flex items-center justify-between h-[60px] shrink-0 z-20 relative';
 
   return (
-    <div className="bg-background/90 backdrop-blur-xl border-b border-primary/10 px-4 flex items-center justify-between h-[60px] shrink-0 z-20 relative">
+    <div className={rootCls}>
       {isHome ? (
         <>
           <div className="flex items-center gap-3 min-w-0">
@@ -52,13 +61,13 @@ export default function TopBar() {
         <>
           <button
             onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
-            className="w-9 h-9 rounded-2xl soft-icon-button flex items-center justify-center transition-all hover:bg-primary/8"
+            className={`w-9 h-9 rounded-2xl soft-icon-button flex items-center justify-center transition-all ${isChama ? 'hover:bg-hesabu-surface-2' : 'hover:bg-primary/8'}`}
           >
-            <ChevronLeft size={17} className="text-foreground" />
+            <ChevronLeft size={17} className={isChama ? 'text-hesabu-paper' : 'text-foreground'} />
           </button>
-          <span className="font-jakarta font-bold text-[13px] text-foreground tracking-tight">{title}</span>
-          <div className="w-9 h-9 rounded-2xl bg-primary/8 flex items-center justify-center border border-primary/15">
-            <ShieldCheck size={13} className="text-primary" />
+          <span className={`font-jakarta font-bold text-[13px] tracking-tight ${isChama ? 'text-hesabu-paper' : 'text-foreground'}`}>{title}</span>
+          <div className={`w-9 h-9 rounded-2xl flex items-center justify-center border ${isChama ? 'bg-hesabu-surface border-hesabu-line' : 'bg-primary/8 border-primary/15'}`}>
+            <ShieldCheck size={13} className={isChama ? 'text-hesabu-emerald' : 'text-primary'} />
           </div>
         </>
       )}

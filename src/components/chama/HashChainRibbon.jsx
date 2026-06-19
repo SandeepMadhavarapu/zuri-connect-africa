@@ -2,6 +2,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Money from '@/components/chama/ui/Money';
+import Eyebrow from '@/components/chama/ui/Eyebrow';
 import usePrefersReducedMotion from '@/components/chama/usePrefersReducedMotion';
 
 /** "a3f97c2..." → "a3f9…7c2" */
@@ -30,9 +31,7 @@ export default function HashChainRibbon({ blocks = [], className }) {
   return (
     <section className={cn('space-y-3', className)}>
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-muted">
-          Tamper-evident ledger
-        </p>
+        <Eyebrow tick>Tamper-evident ledger</Eyebrow>
         <p className="mt-1 text-sm text-hesabu-muted">
           Each contribution is chained to the last — history can&apos;t be rewritten.
         </p>
@@ -42,7 +41,7 @@ export default function HashChainRibbon({ blocks = [], className }) {
         // Preview state: the same chain motif at low opacity, plus a caption.
         // Honest — no fabricated amounts/hashes — but keeps the signature
         // section meaningful before any contribution has settled.
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-hesabu-line bg-hesabu-surface px-5 py-6 text-center">
+        <div className="hesabu-elevated flex flex-col items-center gap-3 rounded-2xl border border-dashed border-hesabu-line bg-hesabu-surface px-5 py-6 text-center">
           <svg width="200" height="44" viewBox="0 0 200 44" fill="none" aria-hidden="true" className="opacity-30">
             {[8, 78, 148].map((x) => (
               <rect
@@ -88,7 +87,7 @@ export default function HashChainRibbon({ blocks = [], className }) {
                   className={cn(
                     'flex w-[120px] shrink-0 flex-col items-center gap-2 rounded-2xl',
                     'border border-hesabu-line bg-hesabu-surface px-3 py-3 text-center',
-                    'shadow-[0_1px_2px_rgba(0,0,0,0.45)]',
+                    'hesabu-elevated',
                     animate && 'hcr-block',
                   )}
                   style={animate ? { animationDelay: `${blockDelay}ms` } : undefined}
