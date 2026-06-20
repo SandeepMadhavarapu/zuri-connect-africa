@@ -133,9 +133,11 @@ function AuthenticatedApp() {
         {/* All financial routes require an authenticated Supabase session */}
         <Route element={<ProtectedRoute unauthenticatedElement={authRedirect} />}>
           <Route element={<AppShell />}>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<ChamaHome />} />
+            <Route path="/home" element={<Home />} />
             <Route path="/history" element={<History />} />
-            <Route path="/chama" element={<ChamaHome />} />
+            {/* Old chama links keep working — redirect to the new front door */}
+            <Route path="/chama" element={<Navigate to="/" replace />} />
             <Route path="/ai" element={<AI />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />

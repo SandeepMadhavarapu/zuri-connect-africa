@@ -1,14 +1,13 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, History, MessageSquare, Landmark, Wallet, User } from 'lucide-react';
+import { History, MessageSquare, Landmark, Wallet, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AI_BRAND } from '@/lib/branding/aiBrand';
 
 const tabs = [
-  { path: '/',        icon: Home,          label: 'Home'           },
+  { path: '/',        icon: Landmark,      label: 'Hesabu'         },
+  { path: '/home',    icon: Wallet,        label: 'Wallet'         },
   { path: '/history', icon: History,       label: 'History'        },
-  { path: '/chama',   icon: Landmark,      label: 'Chama'          },
   { path: '/ai',      icon: MessageSquare, label: AI_BRAND.navLabel },
-  { path: '/wallet',  icon: Wallet,        label: 'Wallet'         },
   { path: '/profile', icon: User,          label: 'Account', badge: true },
 ];
 

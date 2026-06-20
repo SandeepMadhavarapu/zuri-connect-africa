@@ -1,9 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Bell, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { AI_BRAND } from '@/lib/branding/aiBrand';
+import { isHesabuRoute } from '@/lib/hesabuRoutes';
 
 const routeTitles = {
-  '/': null,
+  '/': 'Hesabu',
+  '/home': null,
   '/history': 'Transactions',
   '/chama': 'Hesabu',
   '/profile': 'Account',
@@ -22,12 +24,14 @@ export default function TopBar() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const title     = routeTitles[location.pathname];
-  const isHome    = location.pathname === '/';
+  // The Zuri dashboard (branded logo + bell header) now lives at '/home'.
+  const isHome    = location.pathname === '/home';
   // Chama (Hesabu) routes adopt the dark surface so the bar flows into the hero
   // instead of leaving a white→dark seam. Adding `hesabu-theme` here also brings
   // the --hesabu-* vars into scope (TopBar renders above the page's themed
-  // subtree). Zuri routes never take this branch, so they're untouched.
-  const isChama   = location.pathname.startsWith('/chama');
+  // subtree). Hesabu now lives at BOTH '/' and '/chama'; Zuri routes never take
+  // this branch, so they're untouched.
+  const isChama   = isHesabuRoute(location.pathname);
 
   const rootCls = isChama
     ? 'hesabu-theme bg-hesabu-ink border-b border-hesabu-line px-4 flex items-center justify-between h-[60px] shrink-0 z-20 relative'

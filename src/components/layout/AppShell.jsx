@@ -11,6 +11,7 @@ import RouteGuard from '@/components/security/RouteGuard';
 import OfflineQueueIndicator from '@/components/network/OfflineQueueIndicator';
 import { Clock, ShieldAlert, RotateCcw } from 'lucide-react';
 import { bootInfo, devInfo } from '@/lib/devLog.js';
+import { isHesabuRoute } from '@/lib/hesabuRoutes';
 
 export const SHELL_MAX_WIDTH = 452;
 
@@ -63,7 +64,7 @@ export default function AppShell() {
   const location  = useLocation();
   const prevPath  = useRef(location.pathname);
   const hideNav   = ['/onboarding', '/pin', '/biometric'].includes(location.pathname);
-  const isChamaRoute = location.pathname.startsWith('/chama');
+  const isChamaRoute = isHesabuRoute(location.pathname);
   const { user }  = useAuth();
   const { isLocked, showWarning, unlock, dismissWarning } = useSessionSecurity(user?.email || 'anonymous');
   const [warningCountdown, setWarningCountdown] = useState(60);
