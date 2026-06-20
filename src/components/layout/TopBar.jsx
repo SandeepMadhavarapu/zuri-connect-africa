@@ -40,6 +40,10 @@ export default function TopBar() {
   return (
     <div className={rootCls}>
       {isHome ? (
+        // The branded wallet header only renders at '/home', which is now a dark
+        // Hesabu surface (Step 2-B), so its text/affordances use hesabu tokens to
+        // stay readable on the ink bar. This branch is '/home'-exclusive, so it
+        // cannot affect any other route.
         <>
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-2xl gradient-green flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
@@ -47,18 +51,18 @@ export default function TopBar() {
             </div>
             <div className="min-w-0">
               <div className="flex items-baseline gap-1">
-                <span className="font-grotesk font-bold text-[14px] text-foreground tracking-tight">Zuri Connect</span>
-                <span className="text-primary text-[11px] font-bold">Africa</span>
+                <span className="font-grotesk font-bold text-[14px] text-hesabu-paper tracking-tight">Zuri Connect</span>
+                <span className="text-hesabu-emerald text-[11px] font-bold">Africa</span>
               </div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.18em]">M-PESA intelligence</p>
+              <p className="text-[10px] font-semibold text-hesabu-muted uppercase tracking-[0.18em]">M-PESA intelligence</p>
             </div>
           </div>
           <button
             onClick={() => navigate('/notifications')}
-            className="relative w-9 h-9 rounded-2xl soft-icon-button flex items-center justify-center transition-all hover:bg-primary/8"
+            className="relative w-9 h-9 rounded-2xl bg-hesabu-surface border border-hesabu-line flex items-center justify-center transition-all hover:bg-hesabu-surface-2"
           >
-            <Bell size={15} className="text-muted-foreground" />
-            <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary shadow-sm shadow-primary" />
+            <Bell size={15} className="text-hesabu-muted" />
+            <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-hesabu-emerald" />
           </button>
         </>
       ) : (

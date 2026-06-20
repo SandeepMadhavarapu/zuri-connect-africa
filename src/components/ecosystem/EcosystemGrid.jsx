@@ -31,60 +31,63 @@ function ServiceIcon({ name, size = 16, className }) {
   return <Icon size={size} className={className} />;
 }
 
+// Status badge palette collapsed into the Hesabu vocabulary: live/ready states
+// read emerald, in-flight (pilot/soon) read brass, and informational states stay
+// muted — all on one surface tile so the grid reads as a disciplined set.
 const STATUS_BADGES = {
   payment_ready: {
     label: 'Payment-ready',
-    className: 'bg-primary/10 text-primary border-primary/15',
+    className: 'bg-hesabu-surface-2 text-hesabu-emerald border-hesabu-line',
   },
   directory: {
     label: 'Directory',
-    className: 'bg-blue-400/10 text-blue-400 border-blue-400/15',
+    className: 'bg-hesabu-surface-2 text-hesabu-muted border-hesabu-line',
   },
   integration_ready: {
     label: 'Integration-ready',
-    className: 'bg-violet-400/10 text-violet-400 border-violet-400/15',
+    className: 'bg-hesabu-surface-2 text-hesabu-muted border-hesabu-line',
   },
   pilot: {
     label: 'Pilot',
-    className: 'bg-orange-400/10 text-orange-400 border-orange-400/15',
+    className: 'bg-hesabu-surface-2 text-hesabu-brass border-hesabu-line',
   },
   soon: {
     label: 'Soon',
-    className: 'bg-amber-400/10 text-amber-400 border-amber-400/15',
+    className: 'bg-hesabu-surface-2 text-hesabu-brass border-hesabu-line',
   },
   coming_soon: {
     label: 'Soon',
-    className: 'bg-amber-400/10 text-amber-400 border-amber-400/15',
+    className: 'bg-hesabu-surface-2 text-hesabu-brass border-hesabu-line',
   },
   available: {
     label: 'Available',
-    className: 'bg-primary/10 text-primary border-primary/15',
+    className: 'bg-hesabu-surface-2 text-hesabu-emerald border-hesabu-line',
   },
   staging_ready: {
     label: 'Staging-ready',
-    className: 'bg-primary/10 text-primary border-primary/15',
+    className: 'bg-hesabu-surface-2 text-hesabu-emerald border-hesabu-line',
   },
 };
 
 function ServiceCard({ service, isFav, onTap, onToggleFav }) {
   const status = STATUS_BADGES[service.status] || STATUS_BADGES.integration_ready;
   return (
-    <motion.div variants={itemAnim} layout className="premium-card rounded-2xl p-3.5 relative">
+    <motion.div variants={itemAnim} layout className="hesabu-card rounded-2xl p-3.5 relative">
       <button onClick={() => onToggleFav(service.id)} className="absolute top-2.5 right-2.5 p-1">
         {isFav
-          ? <Star size={11} className="text-amber-400 fill-amber-400" />
-          : <StarOff size={11} className="text-muted-foreground/40" />}
+          ? <Star size={11} className="text-hesabu-brass fill-hesabu-brass" />
+          : <StarOff size={11} className="text-hesabu-muted" />}
       </button>
       <button onClick={() => onTap(service)} className="w-full text-left">
-        <div className={`w-9 h-9 rounded-xl ${service.bg} border border-primary/10 flex items-center justify-center mb-2.5 shadow-sm`}>
-          <ServiceIcon name={service.icon} size={16} className={service.color} />
+        <div className="w-9 h-9 rounded-xl bg-hesabu-surface-2 border border-hesabu-line flex items-center justify-center mb-2.5">
+          <ServiceIcon name={service.icon} size={16} className="text-hesabu-emerald" />
         </div>
-        <p className="text-[12px] font-semibold text-foreground leading-tight pr-4">{service.title}</p>
-        <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed line-clamp-2">{service.description}</p>
+        <p className="text-[12px] font-semibold text-hesabu-paper leading-tight pr-4">{service.title}</p>
+        <p className="text-[10px] text-hesabu-muted mt-1 leading-relaxed line-clamp-2">{service.description}</p>
         <div className="flex items-center gap-1.5 mt-2 flex-wrap">
           <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${status.className}`}>{status.label}</span>
           {service.aiEnabled && (
-            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-400/10 text-violet-400 border border-violet-400/15 flex items-center gap-1">
+            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-hesabu-surface-2 text-hesabu-emerald border border-hesabu-line flex items-center gap-1">
               <Sparkles size={7} /> AI
             </span>
           )}
@@ -118,10 +121,10 @@ export default function EcosystemGrid() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <p className="section-title">Explore Services</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-paper/75">Explore Services</p>
         <button onClick={() => setShowSearch(s => !s)}
-          className="w-8 h-8 rounded-xl soft-icon-button flex items-center justify-center">
-          <Search size={12} className="text-muted-foreground" />
+          className="w-8 h-8 rounded-xl bg-hesabu-surface border border-hesabu-line flex items-center justify-center">
+          <Search size={12} className="text-hesabu-muted" />
         </button>
       </div>
 
@@ -129,12 +132,12 @@ export default function EcosystemGrid() {
       <AnimatePresence>
         {showSearch && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-3">
-            <div className="flex items-center gap-2 surface-panel rounded-2xl px-3 py-2.5">
-              <Search size={13} className="text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-2 hesabu-panel rounded-2xl px-3 py-2.5">
+              <Search size={13} className="text-hesabu-muted shrink-0" />
               <input autoFocus value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search services…"
-                className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none" />
-              {search && <button onClick={() => setSearch('')}><X size={12} className="text-muted-foreground" /></button>}
+                className="flex-1 bg-transparent text-[13px] text-hesabu-paper placeholder:text-hesabu-muted outline-none" />
+              {search && <button onClick={() => setSearch('')}><X size={12} className="text-hesabu-muted" /></button>}
             </div>
           </motion.div>
         )}
@@ -145,8 +148,8 @@ export default function EcosystemGrid() {
         <div className="chip-row mb-3">
           {ECOSYSTEM_CATEGORIES.map(cat => (
             <button key={cat} onClick={() => setCategory(cat)}
-              className={`premium-chip px-3.5 py-1.5 text-[11px] font-bold transition-all ${
-                category === cat ? 'bg-primary text-black border-primary shadow-sm shadow-primary/20' : 'text-muted-foreground'
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-bold transition-all border ${
+                category === cat ? 'bg-hesabu-emerald text-hesabu-ink border-hesabu-emerald' : 'bg-hesabu-surface text-hesabu-muted border-hesabu-line'
               }`}>
               {cat}
             </button>
@@ -158,22 +161,22 @@ export default function EcosystemGrid() {
       {!search && category === 'All' && (
         <div className="mb-4">
           <div className="flex items-center gap-1.5 mb-2.5">
-            <Sparkles size={11} className="text-violet-400" />
-            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest">AI Suggested</p>
+            <Sparkles size={11} className="text-hesabu-emerald" />
+            <p className="text-[10px] text-hesabu-paper/75 font-semibold uppercase tracking-[0.18em]">AI Suggested</p>
           </div>
           <div className="flex flex-col gap-2">
             {AI_SERVICE_SUGGESTIONS.map(sug => {
               const service = ECOSYSTEM_SERVICES.find(s => s.id === sug.serviceId);
               return (
                 <motion.div key={sug.id} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
-                  className="premium-card rounded-2xl px-3.5 py-3 flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-xl ${sug.bg} border border-primary/10 flex items-center justify-center shrink-0`}>
-                    <ServiceIcon name={sug.icon} size={14} className={sug.color} />
+                  className="hesabu-card rounded-2xl px-3.5 py-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-hesabu-surface-2 border border-hesabu-line flex items-center justify-center shrink-0">
+                    <ServiceIcon name={sug.icon} size={14} className="text-hesabu-emerald" />
                   </div>
-                  <p className="text-[12px] text-foreground/85 leading-relaxed flex-1">{sug.text}</p>
+                  <p className="text-[12px] text-hesabu-paper leading-relaxed flex-1">{sug.text}</p>
                   {service && (
                     <button onClick={() => handleTap(service)}
-                      className="shrink-0 text-[11px] font-semibold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-xl">
+                      className="shrink-0 text-[11px] font-semibold text-hesabu-emerald bg-hesabu-surface-2 border border-hesabu-line px-2.5 py-1 rounded-xl">
                       Explore
                     </button>
                   )}
@@ -187,8 +190,8 @@ export default function EcosystemGrid() {
       {/* Favourites */}
       {!search && category === 'All' && favServices.length > 0 && (
         <div className="mb-4">
-          <p className="text-[10px] text-amber-400 font-semibold uppercase tracking-widest mb-2.5 flex items-center gap-1.5">
-            <Star size={9} className="text-amber-400 fill-amber-400" /> Favourites
+          <p className="text-[10px] text-hesabu-brass font-semibold uppercase tracking-[0.18em] mb-2.5 flex items-center gap-1.5">
+            <Star size={9} className="text-hesabu-brass fill-hesabu-brass" /> Favourites
           </p>
           <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 gap-2.5">
             {favServices.map(s => <ServiceCard key={s.id} service={s} isFav onTap={handleTap} onToggleFav={handleToggleFav} />)}
@@ -199,7 +202,7 @@ export default function EcosystemGrid() {
       {/* Recently used */}
       {!search && category === 'All' && recentServices.length > 0 && (
         <div className="mb-4">
-          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest mb-2.5">Recently Used</p>
+          <p className="text-[10px] text-hesabu-paper/75 font-semibold uppercase tracking-[0.18em] mb-2.5">Recently Used</p>
           <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 gap-2.5">
             {recentServices.map(s => <ServiceCard key={s.id} service={s} isFav={favorites.includes(s.id)} onTap={handleTap} onToggleFav={handleToggleFav} />)}
           </motion.div>
@@ -213,7 +216,7 @@ export default function EcosystemGrid() {
 
       {filtered.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-[13px] text-muted-foreground">No services found</p>
+          <p className="text-[13px] text-hesabu-muted">No services found</p>
         </div>
       )}
     </div>

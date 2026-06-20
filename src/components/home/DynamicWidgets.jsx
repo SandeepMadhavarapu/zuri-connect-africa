@@ -11,7 +11,7 @@ function RingWidget({ pct, color, size = 44 }) {
   const dash = (pct / 100) * circ;
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" className="shrink-0">
-      <circle cx="20" cy="20" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3.5" />
+      <circle cx="20" cy="20" r={r} fill="none" stroke="var(--hesabu-line)" strokeWidth="3.5" />
       <circle cx="20" cy="20" r={r} fill="none" stroke={color} strokeWidth="3.5"
         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
         transform="rotate(-90 20 20)" />
@@ -24,19 +24,19 @@ function Widget({ icon: Icon, iconColor, label, value, sub, pct, ringColor, warn
     <motion.button
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className={`premium-card rounded-2xl p-3.5 flex flex-col gap-2 text-left w-full ${warn ? 'border-amber-400/25' : ''}`}
+      className={`hesabu-card rounded-2xl p-3.5 flex flex-col gap-2 text-left w-full ${warn ? 'border-hesabu-brass' : ''}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Icon size={12} className={iconColor} />
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</span>
+          <span className="text-[10px] font-semibold text-hesabu-muted uppercase tracking-wide">{label}</span>
         </div>
-        {warn && <AlertTriangle size={10} className="text-amber-400" />}
+        {warn && <AlertTriangle size={10} className="text-hesabu-brass" />}
       </div>
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-grotesk font-bold text-[16px] text-foreground leading-none">{value}</p>
-          <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{sub}</p>
+          <p className="font-display font-bold text-[16px] text-hesabu-paper leading-none">{value}</p>
+          <p className="text-[10px] text-hesabu-muted mt-1 leading-relaxed">{sub}</p>
         </div>
         {pct !== undefined && <RingWidget pct={pct} color={ringColor} />}
       </div>
@@ -47,27 +47,31 @@ function Widget({ icon: Icon, iconColor, label, value, sub, pct, ringColor, warn
 export default function DynamicWidgets() {
   const navigate = useNavigate();
 
+  // Ring + icon accents collapsed into the Hesabu palette: emerald for the
+  // healthy/trust widgets, muted for the neutral activity trend.
+  const EMERALD = 'var(--hesabu-emerald)';
+  const MUTED = 'var(--hesabu-muted)';
   const widgets = [
     {
-      icon: Signal,     iconColor: 'text-primary',    label: 'Network',
-      value: 'Preview', sub: 'Network signal sample',  pct: 92,  ringColor: '#2ecc71', warn: false,
+      icon: Signal,     iconColor: 'text-hesabu-emerald', label: 'Network',
+      value: 'Preview', sub: 'Network signal sample',  pct: 92,  ringColor: EMERALD, warn: false,
       path: '/network',
     },
     {
-      icon: TrendingUp, iconColor: 'text-blue-400',   label: 'Activity',
-      value: '-18%',    sub: 'Sample activity trend',  pct: 62,  ringColor: '#60a5fa', warn: false,
+      icon: TrendingUp, iconColor: 'text-hesabu-muted',   label: 'Activity',
+      value: '-18%',    sub: 'Sample activity trend',  pct: 62,  ringColor: MUTED, warn: false,
       path: '/history',
     },
     {
-      icon: ShieldCheck, iconColor: 'text-primary',   label: 'Security',
-      value: 'Protected', sub: 'Security checks active', pct: 100, ringColor: '#2ecc71', warn: false,
+      icon: ShieldCheck, iconColor: 'text-hesabu-emerald', label: 'Security',
+      value: 'Protected', sub: 'Security checks active', pct: 100, ringColor: EMERALD, warn: false,
       path: '/security',
     },
   ];
 
   return (
     <div>
-      <p className="section-title mb-3">Dashboard</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-paper/75 mb-3">Dashboard</p>
       <div className="grid grid-cols-2 gap-2.5">
         {widgets.map((w, i) => (
           <motion.div

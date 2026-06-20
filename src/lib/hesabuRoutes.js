@@ -1,7 +1,10 @@
-// Hesabu (chama) now lives at BOTH '/' (the app front door) and '/chama'
-// (kept for old links, which redirect to '/'). Any shared chrome that applies
-// the dark Hesabu treatment must gate on this rule rather than a bare
-// startsWith('/chama'), otherwise '/' would get the light Zuri chrome.
+// Routes that adopt the dark Hesabu surface (ink background + dark top bar /
+// bottom nav). Originally just the chama front door at '/' and '/chama'; as of
+// Restructure Step 2-B the Wallet dashboard at '/home' is also a dark Hesabu
+// surface, so the whole "front-of-app" reads as one product. The remaining Zuri
+// pages ('/history', '/profile', '/ai', …) stay light until their own steps.
+// Any shared chrome that applies the dark treatment must gate on this rule
+// rather than a bare startsWith('/chama'), otherwise '/' would get light chrome.
 export function isHesabuRoute(pathname) {
-  return pathname === '/' || pathname.startsWith('/chama');
+  return pathname === '/' || pathname === '/home' || pathname.startsWith('/chama');
 }

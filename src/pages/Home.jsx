@@ -34,21 +34,21 @@ function DukeCommandCenterCard() {
   ];
 
   return (
-    <div className="premium-card rounded-[24px] p-4 overflow-hidden relative">
-      <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
+    <div className="hesabu-card rounded-[24px] p-4 overflow-hidden relative">
+      <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-hesabu-emerald/10 blur-2xl" />
       <div className="relative flex items-start gap-3">
-        <div className="security-shield-pulse flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 border border-primary/15">
-          <Activity size={18} className="text-primary" />
+        <div className="security-shield-pulse flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-hesabu-surface-2 border border-hesabu-line">
+          <Activity size={18} className="text-hesabu-emerald" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-[13px] font-bold text-foreground">Duke AI wallet safeguards</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+              <p className="text-[13px] font-bold text-hesabu-paper">Duke AI wallet safeguards</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-hesabu-muted">
                 Wallet protection uses server risk checks and ledger integrity monitoring.
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary border border-primary/15">
+            <span className="shrink-0 rounded-full bg-hesabu-surface-2 px-2 py-1 text-[10px] font-bold text-hesabu-emerald border border-hesabu-line">
               Protected
             </span>
           </div>
@@ -56,9 +56,9 @@ function DukeCommandCenterCard() {
             {statusChips.map(({ label, icon: Icon }) => (
               <span
                 key={label}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/80 border border-primary/10 px-2.5 py-1.5 text-[10px] font-bold text-foreground shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-full bg-hesabu-surface-2 border border-hesabu-line px-2.5 py-1.5 text-[10px] font-bold text-hesabu-paper"
               >
-                <Icon size={11} className="text-primary" />
+                <Icon size={11} className="text-hesabu-emerald" />
                 {label}
               </span>
             ))}
@@ -71,17 +71,28 @@ function DukeCommandCenterCard() {
 
 export default function Home() {
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="pb-1"
-    >
-      <motion.div variants={itemVariants}>
-        <RenderGuard name="Balance Card">
-          <BalanceCard />
-        </RenderGuard>
-      </motion.div>
+    <div className="hesabu-theme relative">
+      {/* Ink fill anchored to the scroll container (<main>, the nearest
+          positioned ancestor) so the warm green-black surface spans the full
+          visible height edge-to-edge regardless of content height — mirrors the
+          chama page (Chama.jsx). The route's .app-scrollbar[data-chama-route]
+          fill handles the nav-clearance band beyond the content. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 bg-hesabu-ink"
+      />
+
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative pb-1"
+      >
+        <motion.div variants={itemVariants}>
+          <RenderGuard name="Balance Card">
+            <BalanceCard />
+          </RenderGuard>
+        </motion.div>
 
       <motion.div className="px-4 mt-4" variants={itemVariants}>
         <RenderGuard name="Duke Command Center">
@@ -126,9 +137,9 @@ export default function Home() {
       </motion.div>
 
       <motion.div className="px-4 mt-4 mb-2" variants={itemVariants}>
-        <div className="mb-3 rounded-2xl border border-amber-400/15 bg-amber-400/8 px-3.5 py-3 flex items-start gap-2.5">
-          <Info size={13} className="text-amber-500 mt-0.5 shrink-0" />
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
+        <div className="mb-3 rounded-2xl border border-hesabu-line bg-hesabu-surface px-3.5 py-3 flex items-start gap-2.5">
+          <Info size={13} className="text-hesabu-brass mt-0.5 shrink-0" />
+          <p className="text-[11px] leading-relaxed text-hesabu-muted">
             Service directory preview — PayBill/Till entries require verified provider sources before production use.
           </p>
         </div>
@@ -136,6 +147,7 @@ export default function Home() {
           <EcosystemGrid />
         </RenderGuard>
       </motion.div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

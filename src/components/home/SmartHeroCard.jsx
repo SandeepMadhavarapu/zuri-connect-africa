@@ -8,13 +8,12 @@ import {
 } from 'lucide-react';
 import { getFirstNameForGreeting } from '@/lib/formatters/userDisplay';
 
+// Accent styling is now uniform (emerald) in the Hesabu redesign, so the per-item
+// color/bg/border fields were dropped — the icon + CTA read emerald everywhere.
 const HERO_INSIGHTS = [
   {
     id: 'wallet',
     icon: Wallet,
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-    border: 'border-primary/15',
     headline: 'Chama treasury wallet',
     sub: 'View group savings balance and recent contributions.',
     cta: 'Open wallet',
@@ -23,9 +22,6 @@ const HERO_INSIGHTS = [
   {
     id: 'shield',
     icon: ShieldCheck,
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-    border: 'border-primary/15',
     headline: 'Scam Shield preview signal',
     sub: 'Sample fraud patterns prepared for review.',
     cta: 'Review',
@@ -34,9 +30,6 @@ const HERO_INSIGHTS = [
   {
     id: 'schedules',
     icon: CalendarClock,
-    color: 'text-orange-400',
-    bg: 'bg-orange-400/10',
-    border: 'border-orange-400/15',
     headline: 'Standing orders',
     sub: 'Manage recurring contributions and scheduled payments.',
     cta: 'View orders',
@@ -67,26 +60,26 @@ export default function SmartHeroCard() {
   const Icon = insight.icon;
 
   return (
-    <div className="premium-card rounded-[24px] p-4 overflow-hidden relative">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent" />
+    <div className="hesabu-card rounded-[24px] p-4 overflow-hidden relative">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-hesabu-emerald/40 to-transparent" />
       {/* Greeting row */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
-          <div className="w-6 h-6 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center">
-            <Sparkles size={11} className="text-primary" />
+          <div className="w-6 h-6 rounded-xl bg-hesabu-surface-2 border border-hesabu-line flex items-center justify-center">
+            <Sparkles size={11} className="text-hesabu-emerald" />
           </div>
-          <span className="section-title">Smart Insights</span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-paper/75">Smart Insights</span>
         </div>
         <div className="flex items-center gap-1">
           {HERO_INSIGHTS.map((_, i) => (
             <button key={i} onClick={() => setIdx(i)}
-              className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? 'bg-primary w-3' : 'bg-white/20'}`} />
+              className={`h-1.5 rounded-full transition-all ${i === idx ? 'bg-hesabu-emerald w-3' : 'bg-hesabu-line w-1.5'}`} />
           ))}
         </div>
       </div>
 
       {/* Greeting */}
-      <p className="text-[12px] font-medium text-muted-foreground mb-3">{getGreeting(user?.full_name)}</p>
+      <p className="text-[12px] font-medium text-hesabu-muted mb-3">{getGreeting(user?.full_name)}</p>
 
       {/* Rotating insight */}
       <AnimatePresence mode="wait">
@@ -97,18 +90,18 @@ export default function SmartHeroCard() {
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.25 }}
           onClick={() => navigate(insight.path)}
-          className={`flex items-center gap-3 rounded-2xl px-3.5 py-3 cursor-pointer ${insight.bg} border ${insight.border} shadow-sm`}
+          className="flex items-center gap-3 rounded-2xl px-3.5 py-3 cursor-pointer bg-hesabu-surface-2 border border-hesabu-line"
         >
-          <div className={`w-10 h-10 rounded-2xl bg-white/70 border border-white/70 flex items-center justify-center shrink-0 shadow-sm`}>
-            <Icon size={15} className={insight.color} />
+          <div className="w-10 h-10 rounded-2xl bg-hesabu-ink border border-hesabu-line flex items-center justify-center shrink-0">
+            <Icon size={15} className="text-hesabu-emerald" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className={`text-[13px] font-semibold ${insight.color} leading-tight`}>{insight.headline}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{insight.sub}</p>
+            <p className="text-[13px] font-semibold text-hesabu-paper leading-tight">{insight.headline}</p>
+            <p className="text-[11px] text-hesabu-muted mt-0.5 leading-relaxed">{insight.sub}</p>
           </div>
-          <div className="flex items-center gap-1 shrink-0 rounded-full bg-white/65 border border-white/70 px-2.5 py-1">
-            <span className={`text-[11px] font-bold ${insight.color}`}>{insight.cta}</span>
-            <ChevronRight size={12} className={insight.color} />
+          <div className="flex items-center gap-1 shrink-0 rounded-full bg-hesabu-ink border border-hesabu-line px-2.5 py-1">
+            <span className="text-[11px] font-bold text-hesabu-emerald">{insight.cta}</span>
+            <ChevronRight size={12} className="text-hesabu-emerald" />
           </div>
         </motion.div>
       </AnimatePresence>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
+import Eyebrow from '@/components/chama/ui/Eyebrow';
 import { isLinked } from '../../lib/mpesa';
 import { deriveBalance, deriveBalanceFromLocalLedgerOnly } from '../../lib/ledger';
 import { useAuth } from '@/lib/AuthContext';
@@ -92,40 +93,50 @@ export default function BalanceCard() {
         transition={{ duration: 0.5, delay: 0.1 }}
       >
         <div className="min-w-0">
-          <p className="section-title mb-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-hesabu-muted mb-1">
             {greeting}, {getFirstNameForGreeting(user?.full_name || user?.email)}
           </p>
-          <p className="text-foreground text-[15px] font-grotesk font-bold tracking-tight truncate">
+          <p className="text-hesabu-paper text-[15px] font-display font-bold tracking-tight truncate">
             {user?.phone ? formatKenyanPhone(user.phone) : 'M-PESA wallet'}
           </p>
         </div>
         <motion.div
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/8 border border-primary/15 shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-hesabu-surface border border-hesabu-line"
           whileHover={{ scale: 1.05 }}
         >
           <motion.div
-            className="w-1.5 h-1.5 rounded-full bg-primary"
+            className="w-1.5 h-1.5 rounded-full bg-hesabu-emerald"
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           />
-          <span className="text-xs text-primary font-bold">
+          <span className="text-xs text-hesabu-emerald font-bold">
             {showSampleFinancials ? 'Sample data' : 'Protected'}
           </span>
         </motion.div>
       </motion.div>
 
       <motion.div
-        className="rounded-[28px] p-5 relative overflow-hidden premium-card-strong text-white"
+        className="rounded-[28px] p-5 relative overflow-hidden border border-hesabu-line hesabu-hero hesabu-elevated text-hesabu-paper"
         initial={{ opacity: 0, y: 16, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.7, delay: 0.15, ease: [0.34, 1.56, 0.64, 1] }}
       >
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.18),transparent_42%,rgba(0,0,0,0.08))]" />
+        {/* Soft emerald radial glow for depth behind the figure — same treatment
+            as TreasuryHero so the Wallet balance reads as the page's thesis. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(120% 80% at 18% 0%, rgba(31,157,107,0.34), rgba(31,157,107,0) 60%), ' +
+              'radial-gradient(90% 70% at 100% 100%, rgba(31,157,107,0.12), rgba(31,157,107,0) 55%)',
+          }}
+        />
 
         <div className="relative z-10">
           <motion.button
             onClick={() => setVisible(!visible)}
-            className="absolute top-0 right-0 w-9 h-9 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all"
+            className="absolute top-0 right-0 w-9 h-9 rounded-2xl bg-hesabu-surface-2 border border-hesabu-line flex items-center justify-center hover:bg-hesabu-surface transition-all"
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.9 }}
           >
@@ -136,15 +147,15 @@ export default function BalanceCard() {
               exit={{ scale: 0.8, opacity: 0 }}
             >
               {visible ? (
-                <Eye size={16} className="text-white/80" />
+                <Eye size={16} className="text-hesabu-muted" />
               ) : (
-                <EyeOff size={16} className="text-white/80" />
+                <EyeOff size={16} className="text-hesabu-muted" />
               )}
             </motion.div>
           </motion.button>
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/70 mb-3">Available Balance</p>
+            <Eyebrow tick className="mb-3">Available balance</Eyebrow>
           </motion.div>
 
           <motion.div
@@ -154,12 +165,12 @@ export default function BalanceCard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <span className="text-sm font-semibold text-white/70 font-grotesk">KSh</span>
+            <span className="text-sm font-semibold text-hesabu-muted font-mono">KSh</span>
             {mpesa === null && !loadErr ? (
-              <div className="w-32 h-12 bg-white/20 rounded-xl animate-pulse" />
+              <div className="w-32 h-12 bg-hesabu-surface-2 rounded-xl animate-pulse" />
             ) : (
               <motion.span
-                className="text-5xl font-bold font-grotesk text-white leading-none tracking-tight drop-shadow-sm"
+                className="text-5xl font-bold font-mono tabular-nums text-hesabu-emerald leading-none tracking-tight"
                 initial={balanceAnimated ? { scale: 0.8, opacity: 0 } : {}}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
@@ -170,19 +181,30 @@ export default function BalanceCard() {
           </motion.div>
 
           <motion.div
-            className="flex items-center gap-2 pb-4 border-b border-white/15"
+            className="flex items-center gap-2 pb-4 border-b border-hesabu-line"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <motion.div
-              className="w-2 h-2 rounded-full bg-white"
-              animate={{ scale: [1, 1.3, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            <span className="text-xs font-semibold text-white/80">
+            <svg width="13" height="14" viewBox="0 0 13 14" fill="none" aria-hidden="true" className="shrink-0">
+              <path
+                d="M6.5 1 11.5 3v3.5c0 3-2.1 5.2-5 6.4C3.6 11.7 1.5 9.5 1.5 6.5V3L6.5 1Z"
+                stroke="var(--hesabu-brass)"
+                strokeWidth="1.2"
+                fill="none"
+                strokeLinejoin="round"
+              />
+              <path
+                d="m4.4 7 1.6 1.6L9 5.4"
+                stroke="var(--hesabu-brass)"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="font-mono text-[11px] uppercase tracking-wide text-hesabu-brass">
               {showSampleFinancials
-                ? 'Sample balances - not live funds'
+                ? 'Sample balances — not live funds'
                 : isLinked()
                   ? 'Verified session'
                   : 'Wallet protected'}
@@ -198,19 +220,16 @@ export default function BalanceCard() {
             <SubBalance
               label="Fuliza"
               value={visible ? (usePitchSampleFinancials ? 'Available' : '--') : '--'}
-              color="text-amber-100"
               hint={usePitchSampleFinancials ? 'Ready if needed' : 'No overdraft active'}
             />
             <SubBalance
               label="Savings"
               value={visible ? (usePitchSampleFinancials ? 'KSh 8,200' : '--') : '--'}
-              color="text-white"
               hint={usePitchSampleFinancials ? 'Wallet ready' : 'Link M-PESA'}
             />
             <SubBalance
               label="Rewards"
               value={visible ? (usePitchSampleFinancials ? '1,240' : '0') : '--'}
-              color="text-white"
               hint="Earn on sends"
             />
           </motion.div>
@@ -220,17 +239,17 @@ export default function BalanceCard() {
   );
 }
 
-function SubBalance({ label, value, color, hint }) {
+function SubBalance({ label, value, hint }) {
   return (
     <motion.div
-      className="rounded-2xl bg-white/10 border border-white/15 px-2 py-2.5 text-center"
+      className="rounded-2xl bg-hesabu-surface-2 border border-hesabu-line px-2 py-2.5 text-center"
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
     >
-      <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-white/60 mb-1.5">{label}</p>
-      <p className={`font-grotesk font-bold text-base ${color}`}>{value}</p>
+      <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-hesabu-muted mb-1.5">{label}</p>
+      <p className="font-mono tabular-nums font-bold text-base text-hesabu-paper">{value}</p>
       {hint && value === '--' && (
-        <p className="text-[9px] text-white/60 mt-0.5 leading-tight">{hint}</p>
+        <p className="text-[9px] text-hesabu-muted mt-0.5 leading-tight">{hint}</p>
       )}
     </motion.div>
   );

@@ -5,13 +5,12 @@ import {
   ShieldAlert, WifiOff, X, Sparkles,
 } from 'lucide-react';
 
+// Accent is derived from `priority` in the Hesabu redesign (danger for the risk
+// signal, neutral otherwise), so the per-item color/bg/border fields were dropped.
 const ACTIONS = [
   {
     id: 'freeze',
     icon: ShieldAlert,
-    color: 'text-red-400',
-    bg: 'bg-red-400/10',
-    border: 'border-red-400/20',
     label: 'Review security signal?',
     reason: 'Sample risk pattern for Scam Shield review',
     cta: 'Review',
@@ -21,9 +20,6 @@ const ACTIONS = [
   {
     id: 'wifi',
     icon: WifiOff,
-    color: 'text-muted-foreground',
-    bg: 'bg-white/5',
-    border: 'border-white/10',
     label: 'Review network status?',
     reason: 'Preview suggestion from sample network signals',
     cta: 'Dismiss',
@@ -43,14 +39,18 @@ export default function PredictiveActions() {
       {visible.length > 0 && (
         <>
           <div className="flex items-center gap-1.5 mb-3">
-            <Sparkles size={11} className="text-violet-400" />
-            <p className="section-title">Suggested Actions</p>
+            <Sparkles size={11} className="text-hesabu-emerald" />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-paper/75">Suggested Actions</p>
           </div>
 
           <div className="flex flex-col gap-2">
             <AnimatePresence>
-              {visible.map((action, i) => {
+              {visible.map((action) => {
             const Icon = action.icon;
+            // Collapse the alert palette into the Hesabu vocabulary: a genuine
+            // risk signal reads danger; everything else stays neutral.
+            const isAlert = action.priority === 1;
+            const accent = isAlert ? 'text-hesabu-danger' : 'text-hesabu-muted';
             return (
               <motion.div
                 key={action.id}
@@ -58,27 +58,27 @@ export default function PredictiveActions() {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                 transition={{ duration: 0.22 }}
-                className={`premium-card rounded-2xl px-3.5 py-3 ${action.border} flex items-center gap-3`}
+                className={`hesabu-card rounded-2xl px-3.5 py-3 flex items-center gap-3 ${isAlert ? 'border-hesabu-danger' : ''}`}
               >
-                <div className={`w-8 h-8 rounded-xl ${action.bg} border border-primary/10 flex items-center justify-center shrink-0`}>
-                  <Icon size={14} className={action.color} />
+                <div className="w-8 h-8 rounded-xl bg-hesabu-surface-2 border border-hesabu-line flex items-center justify-center shrink-0">
+                  <Icon size={14} className={accent} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-semibold text-foreground leading-tight">{action.label}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">{action.reason}</p>
+                  <p className="text-[12px] font-semibold text-hesabu-paper leading-tight">{action.label}</p>
+                  <p className="text-[10px] text-hesabu-muted mt-0.5 leading-relaxed">{action.reason}</p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => action.path ? navigate(action.path) : setDismissed(d => [...d, action.id])}
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-xl border ${action.bg} ${action.color} ${action.border}`}
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-xl border bg-hesabu-surface-2 ${isAlert ? 'border-hesabu-danger text-hesabu-danger' : 'border-hesabu-line text-hesabu-emerald'}`}
                   >
                     {action.cta}
                   </button>
                   <button
                     onClick={() => setDismissed(d => [...d, action.id])}
-                    className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center"
+                    className="w-6 h-6 rounded-lg bg-hesabu-surface-2 border border-hesabu-line flex items-center justify-center"
                   >
-                    <X size={10} className="text-muted-foreground" />
+                    <X size={10} className="text-hesabu-muted" />
                   </button>
                 </div>
               </motion.div>

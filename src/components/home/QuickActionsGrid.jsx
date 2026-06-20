@@ -27,23 +27,23 @@ function ActionButton({ action, editMode, onTap, onPin, onUnpin }) {
         whileTap={{ scale: 0.88, opacity: 0.75 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
-        <div className={`w-14 h-14 rounded-2xl ${action.bg} border border-primary/10 flex items-center justify-center transition-all relative shadow-sm shadow-primary/5`}>
-          {Icon && <Icon size={19} className={action.color} />}
+        <div className="w-14 h-14 rounded-2xl bg-hesabu-surface-2 border border-hesabu-line flex items-center justify-center transition-all relative">
+          {Icon && <Icon size={19} className="text-hesabu-emerald" />}
           {editMode && (
             <button
               onClick={e => { e.stopPropagation(); action.pinned ? onUnpin(action.id) : onPin(action.id); }}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center"
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-hesabu-surface border border-hesabu-line flex items-center justify-center"
             >
               {action.pinned
-                ? <PinOff size={9} className="text-amber-500" />
-                : <Pin size={9} className="text-muted-foreground" />}
+                ? <PinOff size={9} className="text-hesabu-brass" />
+                : <Pin size={9} className="text-hesabu-muted" />}
             </button>
           )}
           {action.pinned && !editMode && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-500 border border-background" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-hesabu-brass border border-hesabu-ink" />
           )}
         </div>
-        <span className="text-[11px] text-muted-foreground font-medium leading-tight text-center">{action.label}</span>
+        <span className="text-[11px] text-hesabu-muted font-medium leading-tight text-center">{action.label}</span>
       </motion.button>
     </motion.div>
   );
@@ -56,14 +56,14 @@ function RecommendationChip({ rec, onTap }) {
       initial={{ opacity: 0, x: 12 }}
       animate={{ opacity: 1, x: 0 }}
       onClick={() => onTap(rec)}
-      className="shrink-0 flex items-center gap-2.5 premium-card rounded-2xl px-3.5 py-2.5 active:opacity-70"
+      className="shrink-0 flex items-center gap-2.5 hesabu-card rounded-2xl px-3.5 py-2.5 active:opacity-70"
     >
-      <div className={`w-8 h-8 rounded-xl ${rec.bg} border border-primary/10 flex items-center justify-center shrink-0`}>
-        {Icon && <Icon size={13} className={rec.color} />}
+      <div className="w-8 h-8 rounded-xl bg-hesabu-surface-2 border border-hesabu-line flex items-center justify-center shrink-0">
+        {Icon && <Icon size={13} className="text-hesabu-emerald" />}
       </div>
       <div className="text-left">
-        <p className="text-[12px] font-semibold text-foreground leading-tight">{rec.label}</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">{rec.reason}</p>
+        <p className="text-[12px] font-semibold text-hesabu-paper leading-tight">{rec.label}</p>
+        <p className="text-[10px] text-hesabu-muted mt-0.5">{rec.reason}</p>
       </div>
     </motion.button>
   );
@@ -116,17 +116,17 @@ export default function QuickActionsGrid() {
     <div>
       {/* Header row */}
       <div className="flex items-center justify-between mb-3">
-        <p className="section-title">Services</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-paper/75">Services</p>
         <div className="flex items-center gap-2">
           <button onClick={() => setShowSearch(s => !s)}
-            className="w-8 h-8 rounded-xl soft-icon-button flex items-center justify-center">
-            <Search size={12} className="text-muted-foreground" />
+            className="w-8 h-8 rounded-xl bg-hesabu-surface border border-hesabu-line flex items-center justify-center">
+            <Search size={12} className="text-hesabu-muted" />
           </button>
           <button onClick={() => setEditMode(e => !e)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
               editMode
-                ? 'bg-primary text-black border-primary shadow-sm shadow-primary/20'
-                : 'bg-white/75 border-primary/15 text-muted-foreground'
+                ? 'bg-hesabu-emerald text-hesabu-ink border-hesabu-emerald'
+                : 'bg-hesabu-surface border-hesabu-line text-hesabu-muted'
             }`}>
             {editMode ? <><Check size={11} /> Done</> : <><Pencil size={11} /> Edit</>}
           </button>
@@ -142,17 +142,17 @@ export default function QuickActionsGrid() {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden mb-3"
           >
-            <div className="flex items-center gap-2 surface-panel rounded-2xl px-3 py-2.5">
-              <Search size={13} className="text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-2 hesabu-panel rounded-2xl px-3 py-2.5">
+              <Search size={13} className="text-hesabu-muted shrink-0" />
               <input
                 autoFocus
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search services…"
-                className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
+                className="flex-1 bg-transparent text-[13px] text-hesabu-paper placeholder:text-hesabu-muted outline-none"
               />
               {search && (
-                <button onClick={() => setSearch('')}><X size={12} className="text-muted-foreground" /></button>
+                <button onClick={() => setSearch('')}><X size={12} className="text-hesabu-muted" /></button>
               )}
             </div>
           </motion.div>
@@ -164,10 +164,10 @@ export default function QuickActionsGrid() {
         <div className="chip-row mb-3">
           {CATEGORIES.map(cat => (
             <button key={cat} onClick={() => setCategory(cat)}
-              className={`premium-chip px-3.5 py-1.5 text-xs font-bold transition-all ${
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border ${
                 category === cat
-                  ? 'bg-primary text-black border-primary shadow-sm shadow-primary/20'
-                  : 'text-muted-foreground'
+                  ? 'bg-hesabu-emerald text-hesabu-ink border-hesabu-emerald'
+                  : 'bg-hesabu-surface text-hesabu-muted border-hesabu-line'
               }`}>
               {cat}
             </button>
@@ -178,8 +178,8 @@ export default function QuickActionsGrid() {
       {/* Pinned section */}
       {pinned.length > 0 && !search && (
         <div className="mb-4">
-          <p className="section-title text-amber-600 mb-2.5 flex items-center gap-1.5">
-            <Pin size={9} className="text-amber-600" /> Pinned
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-brass mb-2.5 flex items-center gap-1.5">
+            <Pin size={9} className="text-hesabu-brass" /> Pinned
           </p>
           <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-4 gap-3">
             {pinned.map(action => (
@@ -198,18 +198,18 @@ export default function QuickActionsGrid() {
             return (
               <Reorder.Item key={action.id} value={action} className="relative">
                 <div className="flex flex-col items-center gap-2 w-full cursor-grab active:cursor-grabbing">
-                  <div className={`w-14 h-14 rounded-2xl ${action.bg} border border-primary/10 flex items-center justify-center relative`}>
-                    {Icon && <Icon size={19} className={action.color} />}
+                  <div className="w-14 h-14 rounded-2xl bg-hesabu-surface-2 border border-hesabu-line flex items-center justify-center relative">
+                    {Icon && <Icon size={19} className="text-hesabu-emerald" />}
                     <button
                       onClick={() => action.pinned ? handleUnpin(action.id) : handlePin(action.id)}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center"
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-hesabu-surface border border-hesabu-line flex items-center justify-center"
                     >
                       {action.pinned
-                        ? <PinOff size={9} className="text-amber-500" />
-                        : <Pin size={9} className="text-muted-foreground" />}
+                        ? <PinOff size={9} className="text-hesabu-brass" />
+                        : <Pin size={9} className="text-hesabu-muted" />}
                     </button>
                   </div>
-                  <span className="text-[11px] text-muted-foreground font-medium leading-tight text-center">{action.label}</span>
+                  <span className="text-[11px] text-hesabu-muted font-medium leading-tight text-center">{action.label}</span>
                 </div>
               </Reorder.Item>
             );
@@ -226,7 +226,7 @@ export default function QuickActionsGrid() {
       {/* Recently used */}
       {!editMode && !search && recommended.length > 0 && (
         <div className="mt-4">
-          <p className="section-title mb-2.5">Recently Used</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-paper/75 mb-2.5">Recently Used</p>
           <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-4 gap-3">
             {recommended.map(action => (
               <ActionButton key={action.id} action={action} editMode={false} onTap={handleTap} onPin={handlePin} onUnpin={handleUnpin} />
@@ -239,8 +239,8 @@ export default function QuickActionsGrid() {
       {!editMode && !search && (
         <div className="mt-4">
           <div className="flex items-center gap-2 mb-2.5">
-            <Sparkles size={11} className="text-primary" />
-            <p className="section-title">Preview Suggestions</p>
+            <Sparkles size={11} className="text-hesabu-emerald" />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hesabu-paper/75">Preview Suggestions</p>
           </div>
           <div className="flex flex-col gap-2">
             {aiRecs.map((rec, i) => (

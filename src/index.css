@@ -723,6 +723,29 @@
   background-image: linear-gradient(160deg, #2B4234 0%, var(--hesabu-surface) 58%);
 }
 
+/* Composite surface helpers for the Hesabu Wallet redesign (Step 2-B). These
+   only compose the EXISTING --hesabu-* tokens (no new palette) and are scoped to
+   .hesabu-theme, exactly like .hesabu-elevated / .hesabu-hero above — so they're
+   inert on the light Zuri pages. They consolidate the surface + panel treatments
+   the redesigned Home children share, keeping them consistent with the chama
+   cards and DRY across files. Plain (unlayered) rules so they win over Tailwind's
+   layered utilities, mirroring .hesabu-elevated. */
+.hesabu-theme .hesabu-card {
+  background-color: var(--hesabu-surface);
+  border: 1px solid var(--hesabu-line);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 20px 44px -10px rgba(0, 0, 0, 0.72),
+    inset 0 1px 0 rgba(232, 228, 216, 0.10);
+}
+
+/* Recessed panel — inputs / search fields / nested wells. Slightly deeper than
+   the surface card so form fields read as "inset" against the ink page. */
+.hesabu-theme .hesabu-panel {
+  background-color: var(--hesabu-ink);
+  border: 1px solid var(--hesabu-line);
+}
+
 /* Always-visible keyboard focus inside the Hesabu subtree. */
 .hesabu-theme :focus-visible {
   outline: 2px solid var(--hesabu-emerald);
