@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { History, MessageSquare, Landmark, Wallet, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AI_BRAND } from '@/lib/branding/aiBrand';
+import { isHesabuRoute } from '@/lib/hesabuRoutes';
 
 const tabs = [
   { path: '/',        icon: Landmark,      label: 'Hesabu'         },
@@ -14,10 +15,17 @@ const tabs = [
 export default function BottomNav() {
   const navigate  = useNavigate();
   const location  = useLocation();
+  // Mirror TopBar's adaptive chrome: the nav tints to its section (dark ink-glass
+  // on Hesabu, light glass on Zuri) while staying the same component. Adding
+  // `hesabu-theme` brings the --hesabu-* vars into scope on the element, exactly
+  // as TopBar does. Gated on isHesabuRoute so it's deliberate and reversible.
+  const isChama   = isHesabuRoute(location.pathname);
 
   return (
     <div
-      className="bg-background/95 backdrop-blur-xl border-t border-primary/10 px-3 pt-2 shrink-0 z-20 relative shadow-[0_-18px_40px_rgba(15,80,45,0.06)]"
+      className={`zuri-bottom-nav backdrop-blur-xl px-3 pt-2 shrink-0 z-20 relative ${
+        isChama ? 'hesabu-theme zuri-bottom-nav--hesabu' : ''
+      }`}
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-center justify-between h-[66px] gap-1">
@@ -56,7 +64,9 @@ export default function BottomNav() {
                     className={`transition-all duration-300 ${
                       active
                         ? 'text-primary'
-                        : 'text-muted-foreground group-hover:text-foreground'
+                        : isChama
+                          ? 'text-hesabu-muted group-hover:text-hesabu-paper'
+                          : 'text-muted-foreground group-hover:text-foreground'
                     }`}
                   />
                 </motion.div>
@@ -73,7 +83,11 @@ export default function BottomNav() {
               {/* Label */}
               <motion.span
                 className={`text-[10px] font-bold relative z-10 transition-colors duration-300 leading-none ${
-                  active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                  active
+                    ? 'text-primary'
+                    : isChama
+                      ? 'text-hesabu-muted group-hover:text-hesabu-paper'
+                      : 'text-muted-foreground group-hover:text-foreground'
                 }`}
                 animate={active ? { opacity: 1 } : { opacity: 0.7 }}
               >
