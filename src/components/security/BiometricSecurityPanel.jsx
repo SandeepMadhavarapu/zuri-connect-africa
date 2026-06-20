@@ -158,9 +158,9 @@ export default function BiometricSecurityPanel() {
 
   if (loading) {
     return (
-      <div className="premium-card rounded-2xl p-6">
+      <div className="hesabu-card rounded-2xl p-6">
         <div className="flex items-center justify-center py-8">
-          <Loader2 size={18} className="text-primary animate-spin" />
+          <Loader2 size={18} className="text-hesabu-emerald animate-spin" />
         </div>
       </div>
     );
@@ -171,15 +171,15 @@ export default function BiometricSecurityPanel() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="surface-panel rounded-2xl p-5 border-amber-400/20 bg-amber-400/5"
+        className="hesabu-card rounded-2xl p-5 border-hesabu-brass/25 bg-hesabu-brass/[0.06]"
       >
         <div className="flex items-start gap-4">
-          <AlertCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+          <AlertCircle size={18} className="text-hesabu-brass shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-400 mb-1">
+            <p className="text-sm font-semibold text-hesabu-brass mb-1">
               Biometric Not Supported
             </p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs text-hesabu-muted leading-relaxed">
               Your device or browser does not support WebAuthn biometric authentication.
               Please use PIN or password authentication instead.
             </p>
@@ -194,15 +194,15 @@ export default function BiometricSecurityPanel() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="surface-panel rounded-2xl p-5 border-amber-400/20 bg-amber-400/5"
+        className="hesabu-card rounded-2xl p-5 border-hesabu-brass/25 bg-hesabu-brass/[0.06]"
       >
         <div className="flex items-start gap-4">
-          <AlertCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+          <AlertCircle size={18} className="text-hesabu-brass shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-400 mb-1">
+            <p className="text-sm font-semibold text-hesabu-brass mb-1">
               Authenticator Not Available
             </p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs text-hesabu-muted leading-relaxed">
               Your device does not have a platform authenticator (Face ID, Touch ID, Windows Hello).
               Biometric authentication is not available.
             </p>
@@ -219,29 +219,27 @@ export default function BiometricSecurityPanel() {
       className="space-y-4"
     >
       {/* Status card */}
-      <div className={`premium-card rounded-[24px] p-5 transition-all ${
+      <div className={`hesabu-card rounded-[24px] p-5 transition-all ${
         enrolled
-          ? 'border-primary/20 bg-primary/5'
+          ? 'border-hesabu-emerald/25 bg-hesabu-emerald/[0.06]'
           : ''
       }`}>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-start gap-3 flex-1">
             <motion.div
-              className={`rounded-2xl p-3 shrink-0 ${
-                enrolled ? 'bg-primary/15 border border-primary/15' : 'bg-white/80 border border-border'
-              }`}
+              className="rounded-2xl p-3 shrink-0 bg-hesabu-surface-2 border border-hesabu-line"
               whileHover={{ scale: 1.05 }}
             >
               <Smartphone
                 size={20}
-                className={enrolled ? 'text-primary' : 'text-muted-foreground'}
+                className={enrolled ? 'text-hesabu-emerald' : 'text-hesabu-muted'}
               />
             </motion.div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-sm font-semibold text-hesabu-paper">
                 Biometric Security
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-hesabu-muted mt-0.5">
                 Face ID, Touch ID, or Windows Hello
               </p>
             </div>
@@ -250,10 +248,10 @@ export default function BiometricSecurityPanel() {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/15"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-hesabu-surface-2 border border-hesabu-line"
             >
-              <CheckCircle2 size={12} className="text-primary" />
-              <span className="text-xs font-semibold text-primary">Enabled</span>
+              <CheckCircle2 size={12} className="text-hesabu-emerald" />
+              <span className="text-xs font-semibold text-hesabu-emerald">Enabled</span>
             </motion.div>
           )}
         </div>
@@ -263,10 +261,10 @@ export default function BiometricSecurityPanel() {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="flex items-center gap-2 mb-4 p-2.5 rounded-lg bg-primary/8 border border-primary/15"
+            className="flex items-center gap-2 mb-4 p-2.5 rounded-lg bg-hesabu-surface-2 border border-hesabu-line"
           >
-            <Clock size={13} className="text-primary shrink-0" />
-            <span className="text-xs text-primary">
+            <Clock size={13} className="text-hesabu-emerald shrink-0" />
+            <span className="text-xs text-hesabu-emerald">
               {formatBiometricEnrolledLabel(enrollmentInfo?.enrolledAt)}
             </span>
           </motion.div>
@@ -280,7 +278,7 @@ export default function BiometricSecurityPanel() {
               disabled={enrolling}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.95 }}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl gradient-green text-black text-sm font-bold disabled:opacity-50 transition-all shadow-lg shadow-primary/15"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-hesabu-emerald text-hesabu-ink text-sm font-bold hover:bg-hesabu-emerald-dim disabled:opacity-50 transition-all shadow-lg shadow-black/30"
             >
               {enrolling ? (
                 <>
@@ -300,7 +298,7 @@ export default function BiometricSecurityPanel() {
               disabled={removing}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.95 }}
-              className="flex-1 inline-flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl surface-panel border border-red-400/15 bg-red-400/[0.04] text-red-400/90 text-sm font-semibold tracking-tight hover:border-red-400/30 hover:bg-red-400/[0.07] hover:text-red-400 disabled:opacity-50 transition-all"
+              className="flex-1 inline-flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl border border-hesabu-danger/20 bg-hesabu-danger/[0.06] text-hesabu-danger text-sm font-semibold tracking-tight hover:border-hesabu-danger/40 hover:bg-hesabu-danger/[0.1] disabled:opacity-50 transition-all"
             >
               {removing ? (
                 <>
@@ -325,11 +323,11 @@ export default function BiometricSecurityPanel() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="surface-panel rounded-2xl p-4 border-red-400/20 bg-red-400/5"
+            className="hesabu-card rounded-2xl p-4 border-hesabu-danger/25 bg-hesabu-danger/[0.06]"
           >
             <div className="flex items-start gap-3">
-              <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-red-500 leading-relaxed font-medium">{String(error).replace(/^Error:\s*/i, '')}</p>
+              <AlertCircle size={14} className="text-hesabu-danger shrink-0 mt-0.5" />
+              <p className="text-xs text-hesabu-danger leading-relaxed font-medium">{String(error).replace(/^Error:\s*/i, '')}</p>
             </div>
           </motion.div>
         )}
@@ -342,18 +340,18 @@ export default function BiometricSecurityPanel() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="surface-panel rounded-2xl p-4 border-primary/20 bg-primary/5"
+            className="hesabu-card rounded-2xl p-4 border-hesabu-emerald/25 bg-hesabu-emerald/[0.06]"
           >
             <div className="flex items-start gap-3">
-              <CheckCircle2 size={14} className="text-primary shrink-0 mt-0.5" />
-              <p className="text-xs text-primary font-medium">{success}</p>
+              <CheckCircle2 size={14} className="text-hesabu-emerald shrink-0 mt-0.5" />
+              <p className="text-xs text-hesabu-emerald font-medium">{success}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Info text */}
-      <p className="text-xs text-muted-foreground leading-relaxed px-2">
+      <p className="text-xs text-hesabu-muted leading-relaxed px-2">
         When enabled, you'll use your device's biometric authentication (Face ID, Touch ID, fingerprint, or Windows Hello) for secure transactions. Your biometric data never leaves your device.
       </p>
     </motion.div>
