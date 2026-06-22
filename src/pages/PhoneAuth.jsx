@@ -15,7 +15,7 @@ export default function PhoneAuth() {
           onClick={() => setMode('phone')}
           className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
             mode === 'phone'
-              ? 'bg-[#00C853] text-black'
+              ? 'bg-[#1F9D6B] text-black'
               : 'bg-white/10 text-white/70 border border-white/10'
           }`}
         >
@@ -27,7 +27,7 @@ export default function PhoneAuth() {
           onClick={() => setMode('email')}
           className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
             mode === 'email'
-              ? 'bg-[#00C853] text-black'
+              ? 'bg-[#1F9D6B] text-black'
               : 'bg-white/10 text-white/70 border border-white/10'
           }`}
         >

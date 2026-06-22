@@ -94,7 +94,7 @@ export default function OTPEntry({ phone, onSubmit, loading, error, onResend }) 
             onKeyDown={(e) => handleKeyDown(index, e)}
             maxLength="1"
             disabled={loading}
-            className="w-12 h-12 text-center text-white text-lg font-bold bg-white/5 border border-white/20 rounded-lg focus:border-[#00C853] focus:outline-none transition-colors disabled:opacity-50"
+            className="w-12 h-12 text-center text-white text-lg font-bold bg-white/5 border border-white/20 rounded-lg focus:border-[#1F9D6B] focus:outline-none transition-colors disabled:opacity-50"
           />
         ))}
       </div>
@@ -103,7 +103,7 @@ export default function OTPEntry({ phone, onSubmit, loading, error, onResend }) 
       <button
         type="submit"
         disabled={loading || otp.join('').length < 6}
-        className="w-full bg-[#00C853] text-black font-bold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#00B84D] active:scale-95"
+        className="w-full bg-[#1F9D6B] text-black font-bold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#137A51] active:scale-95"
       >
         {loading ? (
           <div className="flex items-center justify-center gap-2">
@@ -121,13 +121,13 @@ export default function OTPEntry({ phone, onSubmit, loading, error, onResend }) 
           <button
             type="button"
             onClick={handleResend}
-            className="text-[#00C853] text-sm font-medium hover:text-[#00B84D] transition-colors"
+            className="text-[#1F9D6B] text-sm font-medium hover:text-[#137A51] transition-colors"
           >
             Resend code
           </button>
         ) : (
           <p className="text-white/40 text-sm">
-            Resend code in <span className="text-[#00C853] font-medium">{resendCountdown}s</span>
+            Resend code in <span className="text-[#1F9D6B] font-medium">{resendCountdown}s</span>
           </p>
         )}
       </div>

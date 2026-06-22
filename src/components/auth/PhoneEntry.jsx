@@ -46,7 +46,7 @@ export default function PhoneEntry({ onSubmit, loading, error }) {
         <label htmlFor="phone-number" className="block text-white/80 text-sm font-medium">
           Phone Number
         </label>
-        <div className="flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus-within:border-[#00C853]/50 transition-colors">
+        <div className="flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus-within:border-[#1F9D6B]/50 transition-colors">
           <input
             id="phone-number"
             type="tel"
@@ -68,7 +68,7 @@ export default function PhoneEntry({ onSubmit, loading, error }) {
       <button
         type="submit"
         disabled={loading || !phone.trim()}
-        className="w-full bg-[#00C853] text-black font-bold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#00B84D] active:scale-95"
+        className="w-full bg-[#1F9D6B] text-black font-bold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#137A51] active:scale-95"
       >
         {loading ? (
           <div className="flex items-center justify-center gap-2">

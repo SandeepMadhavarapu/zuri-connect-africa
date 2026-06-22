@@ -98,7 +98,7 @@ export default function EmailPasswordAuth({ embedded }) {
                     value={fullName}
                     onChange={(ev) => setFullName(ev.target.value)}
                     autoComplete="name"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 outline-none text-sm focus:border-[#00C853]/50 transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 outline-none text-sm focus:border-[#1F9D6B]/50 transition-colors"
                     placeholder="e.g. Wanjiku Kamau"
                     disabled={loading}
                   />
@@ -112,7 +112,7 @@ export default function EmailPasswordAuth({ embedded }) {
                   value={email}
                   onChange={(ev) => setEmail(ev.target.value)}
                   autoComplete="email"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 outline-none text-sm focus:border-[#00C853]/50 transition-colors"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 outline-none text-sm focus:border-[#1F9D6B]/50 transition-colors"
                   placeholder="you@example.com"
                   disabled={loading}
                 />
@@ -125,7 +125,7 @@ export default function EmailPasswordAuth({ embedded }) {
                   value={password}
                   onChange={(ev) => setPassword(ev.target.value)}
                   autoComplete={isRegister ? 'new-password' : 'current-password'}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 outline-none text-sm focus:border-[#00C853]/50 transition-colors"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/40 outline-none text-sm focus:border-[#1F9D6B]/50 transition-colors"
                   placeholder="••••••••"
                   disabled={loading}
                 />
@@ -134,7 +134,7 @@ export default function EmailPasswordAuth({ embedded }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#00C853] text-black font-bold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#00B84D] active:scale-95"
+                className="w-full bg-[#1F9D6B] text-black font-bold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#137A51] active:scale-95"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -154,7 +154,7 @@ export default function EmailPasswordAuth({ embedded }) {
                     setError('');
                     setInfo('');
                   }}
-                  className="text-[#00C853] text-sm font-medium hover:underline"
+                  className="text-[#1F9D6B] text-sm font-medium hover:underline"
                 >
                   {isRegister ? 'Already have an account? Sign in' : 'New here? Create an account'}
                 </button>
