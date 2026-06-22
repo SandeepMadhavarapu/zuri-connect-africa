@@ -69,9 +69,9 @@ export default function TopBar() {
         <>
           <button
             onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
-            className={`w-9 h-9 rounded-2xl soft-icon-button flex items-center justify-center transition-all ${isChama ? 'hover:bg-hesabu-surface-2' : 'hover:bg-primary/8'}`}
+            className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all ${isChama ? 'bg-hesabu-surface border border-hesabu-line hover:bg-hesabu-surface-2' : 'soft-icon-button hover:bg-primary/8'}`}
           >
-            <ChevronLeft size={17} className={isChama ? 'text-hesabu-paper' : 'text-foreground'} />
+            <ChevronLeft size={17} className={isChama ? 'text-hesabu-emerald' : 'text-foreground'} />
           </button>
           <span className={`font-jakarta font-bold text-[13px] tracking-tight ${isChama ? 'text-hesabu-paper' : 'text-foreground'}`}>{title}</span>
           <div className={`w-9 h-9 rounded-2xl flex items-center justify-center border ${isChama ? 'bg-hesabu-surface border-hesabu-line' : 'bg-primary/8 border-primary/15'}`}>
