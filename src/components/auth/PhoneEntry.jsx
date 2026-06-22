@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import HesabuLogo from '@/components/brand/HesabuLogo';
 
 export default function PhoneEntry({ onSubmit, loading, error }) {
   const [phone, setPhone] = useState('');
@@ -18,11 +19,9 @@ export default function PhoneEntry({ onSubmit, loading, error }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Logo */}
-      <div className="flex justify-center mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-[#00C853] flex items-center justify-center">
-          <span className="text-black font-bold text-2xl">S</span>
-        </div>
+      {/* Brand */}
+      <div className="hesabu-theme flex justify-center mb-8">
+        <HesabuLogo size={96} showWordmark tagline />
       </div>
 
       {/* Heading */}

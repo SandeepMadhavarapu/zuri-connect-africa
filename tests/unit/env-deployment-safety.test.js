@@ -362,12 +362,12 @@ describe('CSP headers (vercel.json + nginx.conf)', () => {
     expect(html).not.toMatch(/frame-ancestors/);
   });
 
-  it('manifest.json and favicon.svg exist and are linked from index.html', () => {
+  it('manifest.json and the app icon exist and are linked from index.html', () => {
     const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
     expect(html).toMatch(/manifest\.json/);
-    expect(html).toMatch(/favicon\.svg/);
+    expect(html).toMatch(/hesabu-logo\.svg/);
     expect(existsSync(join(ROOT, 'public', 'manifest.json'))).toBe(true);
-    expect(existsSync(join(ROOT, 'public', 'favicon.svg'))).toBe(true);
+    expect(existsSync(join(ROOT, 'public', 'hesabu-logo.svg'))).toBe(true);
   });
 });
 

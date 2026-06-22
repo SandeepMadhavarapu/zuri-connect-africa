@@ -1,0 +1,7 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hesabu">
+  <rect x="0" y="0" width="120" height="120" rx="28" fill="#0c1411" stroke="#1F9D6B" stroke-opacity="0.30" stroke-width="2"/>
+  <line x1="44" y1="38" x2="44" y2="82" stroke="#1F9D6B" stroke-width="12" stroke-linecap="round"/>
+  <line x1="76" y1="38" x2="76" y2="82" stroke="#1F9D6B" stroke-width="12" stroke-linecap="round"/>
+  <line x1="44" y1="53" x2="76" y2="53" stroke="#C9A227" stroke-width="6" stroke-linecap="round"/>
+  <line x1="44" y1="67" x2="76" y2="67" stroke="#C9A227" stroke-width="6" stroke-linecap="round"/>
+</svg>

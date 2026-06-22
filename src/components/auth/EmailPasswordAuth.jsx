@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { login, register } from '@/api/auth.js';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client.js';
+import HesabuLogo from '@/components/brand/HesabuLogo';
 
 export default function EmailPasswordAuth({ embedded }) {
   const [email, setEmail] = useState('');
@@ -64,10 +65,8 @@ export default function EmailPasswordAuth({ embedded }) {
             transition={{ duration: 0.2 }}
           >
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="flex justify-center mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-[#00C853] flex items-center justify-center">
-                  <span className="text-black font-bold text-2xl">Z</span>
-                </div>
+              <div className="hesabu-theme flex justify-center mb-8">
+                <HesabuLogo size={96} showWordmark tagline />
               </div>
 
               <div className="text-center space-y-2">

@@ -1,6 +1,6 @@
 {
-  "name": "Zuri Connect Africa",
-  "short_name": "Zuri",
+  "name": "Hesabu",
+  "short_name": "Hesabu",
   "description": "Secure Supabase-backed fintech and telecom wallet for Africa.",
   "start_url": "/",
   "scope": "/",
@@ -9,7 +9,7 @@
   "theme_color": "#21d07a",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/hesabu-logo.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
