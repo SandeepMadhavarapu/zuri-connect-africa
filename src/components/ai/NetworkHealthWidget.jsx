@@ -12,8 +12,8 @@ export default function NetworkHealthWidget() {
       name="Network Health"
       loader={loader}
       fallback={
-        <div className="glass-card rounded-xl px-3.5 py-2.5 border border-white/6">
-          <p className="text-[11px] text-muted-foreground">Network status normal</p>
+        <div className="hesabu-card rounded-xl px-3.5 py-2.5">
+          <p className="text-[11px] text-hesabu-muted">Network status normal</p>
         </div>
       }
     >
@@ -22,8 +22,8 @@ export default function NetworkHealthWidget() {
         return (
           <div className="flex flex-col gap-1.5">
             {safeInsights.map((ins, i) => (
-              <div key={i} className={`glass-card rounded-xl px-3.5 py-2.5 border ${ins?.type === 'warning' ? 'border-amber-400/15' : 'border-white/6'}`}>
-                <p className="text-[11px] text-foreground/80 leading-relaxed">{ins?.text || 'No insight'}</p>
+              <div key={i} className={`hesabu-card rounded-xl px-3.5 py-2.5 ${ins?.type === 'warning' ? 'border-hesabu-brass/30' : ''}`}>
+                <p className="text-[11px] text-hesabu-paper/80 leading-relaxed">{ins?.text || 'No insight'}</p>
               </div>
             ))}
           </div>

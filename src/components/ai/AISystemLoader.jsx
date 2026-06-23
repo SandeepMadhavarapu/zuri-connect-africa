@@ -42,25 +42,25 @@ export default function AISystemLoader({ name, loader, children, fallback }) {
 
   if (state === 'loading') {
     return (
-      <div className="glass-card rounded-2xl p-4 animate-pulse">
-        <div className="h-4 bg-white/5 rounded w-1/3 mb-3" />
-        <div className="h-3 bg-white/5 rounded w-2/3" />
+      <div className="hesabu-card rounded-2xl p-4 animate-pulse">
+        <div className="h-4 bg-hesabu-surface-2 rounded w-1/3 mb-3" />
+        <div className="h-3 bg-hesabu-surface-2 rounded w-2/3" />
       </div>
     );
   }
 
   if (state === 'error') {
     return (
-      <div className="glass-card rounded-2xl p-4">
-        <p className="text-sm text-muted-foreground">{error || `Unable to load ${name}`}</p>
+      <div className="hesabu-card rounded-2xl p-4">
+        <p className="text-sm text-hesabu-muted">{error || `Unable to load ${name}`}</p>
       </div>
     );
   }
 
   if (state === 'empty') {
     return fallback || (
-      <div className="glass-card rounded-2xl p-4">
-        <p className="text-sm text-muted-foreground">No {name} data available</p>
+      <div className="hesabu-card rounded-2xl p-4">
+        <p className="text-sm text-hesabu-muted">No {name} data available</p>
       </div>
     );
   }

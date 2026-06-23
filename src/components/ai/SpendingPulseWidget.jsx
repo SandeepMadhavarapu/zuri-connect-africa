@@ -13,12 +13,12 @@ export default function SpendingPulseWidget() {
       name="Spending Pulse"
       loader={loader}
       fallback={
-        <div className="glass-card rounded-2xl p-3.5 border border-white/6">
+        <div className="hesabu-card rounded-2xl p-3.5">
           <div className="flex items-center gap-1.5 mb-2.5">
-            <Activity size={11} className="text-blue-400" />
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Spending Pulse</p>
+            <Activity size={11} className="text-hesabu-emerald" />
+            <p className="text-[10px] font-semibold text-hesabu-muted uppercase tracking-widest">Spending Pulse</p>
           </div>
-          <p className="text-[11px] text-muted-foreground">No spending data available</p>
+          <p className="text-[11px] text-hesabu-muted">No spending data available</p>
         </div>
       }
     >
@@ -30,10 +30,10 @@ export default function SpendingPulseWidget() {
         const airtime = debits.filter(t => t?.type === 'airtime').reduce((s, t) => s + Math.abs(Math.max(0, Number(t?.amount) || 0)), 0) || 0;
 
         return (
-          <div className="glass-card rounded-2xl p-3.5 border border-white/6">
+          <div className="hesabu-card rounded-2xl p-3.5">
             <div className="flex items-center gap-1.5 mb-2.5">
-              <Activity size={11} className="text-blue-400" />
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Spending Pulse</p>
+              <Activity size={11} className="text-hesabu-emerald" />
+              <p className="text-[10px] font-semibold text-hesabu-muted uppercase tracking-widest">Spending Pulse</p>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {[
@@ -42,8 +42,8 @@ export default function SpendingPulseWidget() {
                 { label: 'Airtime',   val: `KSh ${airtime.toLocaleString()}` },
               ].map(s => (
                 <div key={s.label} className="text-center">
-                  <p className="font-grotesk font-bold text-[14px] text-foreground">{s.val}</p>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">{s.label}</p>
+                  <p className="font-grotesk font-bold text-[14px] text-hesabu-paper">{s.val}</p>
+                  <p className="text-[9px] text-hesabu-muted mt-0.5">{s.label}</p>
                 </div>
               ))}
             </div>

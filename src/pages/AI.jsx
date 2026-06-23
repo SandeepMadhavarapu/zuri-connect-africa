@@ -48,19 +48,23 @@ const INTRO_CAPABILITIES = [
   { label: 'Network', detail: 'Signal support', icon: Wifi },
 ];
 
+// Provider badges keep their semantic meaning but inside the Hesabu palette:
+// live providers read emerald, degraded/rate-limited states brass, and
+// auth/safety failures danger — no rainbow tints. Scoped to the .hesabu-theme
+// subtree like the rest of /ai.
 const PROVIDER_COLORS = {
-  openai:       'text-primary bg-primary/10',
-  anthropic:    'text-violet-400 bg-violet-400/10',
-  gemini:       'text-blue-400 bg-blue-400/10',
-  local:        'text-amber-400 bg-amber-400/10',
-  safety:       'text-red-400 bg-red-400/10',
-  rate_limited: 'text-amber-400 bg-amber-400/10',
-  auth:         'text-red-400 bg-red-400/10',
+  openai:       'text-hesabu-emerald bg-hesabu-emerald/10',
+  anthropic:    'text-hesabu-emerald bg-hesabu-emerald/10',
+  gemini:       'text-hesabu-emerald bg-hesabu-emerald/10',
+  local:        'text-hesabu-brass bg-hesabu-brass/10',
+  safety:       'text-hesabu-danger bg-hesabu-danger/10',
+  rate_limited: 'text-hesabu-brass bg-hesabu-brass/10',
+  auth:         'text-hesabu-danger bg-hesabu-danger/10',
 };
 
 function ProviderBadge({ provider, latency, fallback }) {
   if ((provider === 'local' || provider === 'unavailable') && !import.meta.env.DEV) return null;
-  const cls = PROVIDER_COLORS[provider] || 'text-muted-foreground bg-white/5';
+  const cls = PROVIDER_COLORS[provider] || 'text-hesabu-muted bg-hesabu-surface-2';
   return (
     <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${cls} ml-2`}>
       {provider}{latency ? ` · ${latency}ms` : ''}{fallback ? ' ↩' : ''}
@@ -75,7 +79,7 @@ function ActionChips({ actionTypes, onAction }) {
   if (!actions.length) {
     return (
       <div className="flex flex-wrap gap-1.5 mt-2">
-        <span className="text-[10px] text-muted-foreground">No actions available</span>
+        <span className="text-[10px] text-hesabu-muted">No actions available</span>
       </div>
     );
   }
@@ -83,7 +87,7 @@ function ActionChips({ actionTypes, onAction }) {
     <div className="flex flex-wrap gap-1.5 mt-2">
       {actions.map(a => (
         <button key={a.id} onClick={() => onAction(a.id)}
-          className={`text-[10px] font-bold px-2.5 py-1.5 rounded-full border ${a.bg} ${a.color} border-primary/10 shadow-sm`}>
+          className="text-[10px] font-bold px-2.5 py-1.5 rounded-full border bg-hesabu-surface-2 text-hesabu-emerald border-hesabu-line shadow-sm">
           {a.label} →
         </button>
       ))}
@@ -95,27 +99,27 @@ function AdvisorIntroBubble({ name }) {
   return (
     <div className="space-y-4">
       <div>
-        <p className="font-grotesk text-base font-bold text-foreground">Habari, {name}.</p>
-        <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+        <p className="font-grotesk text-base font-bold text-hesabu-paper">Habari, {name}.</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-hesabu-muted">
           I am {AI_BRAND.name}, your Zuri Connect Africa copilot for wallet decisions, payments, bundles, fraud awareness, and network help.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-2">
         {INTRO_CAPABILITIES.map(({ label, detail, icon: Icon }) => (
-          <div key={label} className="flex items-center gap-2.5 rounded-2xl bg-white/75 border border-primary/10 px-3 py-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-              <Icon size={13} className="text-primary" />
+          <div key={label} className="flex items-center gap-2.5 hesabu-card rounded-2xl px-3 py-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-hesabu-surface-2 border border-hesabu-line">
+              <Icon size={13} className="text-hesabu-emerald" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold text-foreground">{label}</p>
-              <p className="text-[10px] text-muted-foreground">{detail}</p>
+              <p className="text-[11px] font-bold text-hesabu-paper">{label}</p>
+              <p className="text-[10px] text-hesabu-muted">{detail}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <p className="text-[11px] font-semibold text-primary">What would you like to review today?</p>
+      <p className="text-[11px] font-semibold text-hesabu-emerald">What would you like to review today?</p>
     </div>
   );
 }
@@ -129,10 +133,10 @@ function SpendingPulse({ txHistory }) {
   const bundles = debits.filter(t => t?.type === 'bundle').reduce((s, t) => s + Math.abs(Math.max(0, Number(t?.amount) || 0)), 0) || 0;
   const airtime = debits.filter(t => t?.type === 'airtime').reduce((s, t) => s + Math.abs(Math.max(0, Number(t?.amount) || 0)), 0) || 0;
   return (
-    <div className="glass-card rounded-2xl p-3.5 border border-white/6">
+    <div className="hesabu-card rounded-2xl p-3.5">
       <div className="flex items-center gap-1.5 mb-2.5">
-        <Activity size={11} className="text-blue-400" />
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Spending Pulse</p>
+        <Activity size={11} className="text-hesabu-emerald" />
+        <p className="text-[10px] font-semibold text-hesabu-muted uppercase tracking-widest">Spending Pulse</p>
       </div>
       <div className="grid grid-cols-3 gap-2">
         {[
@@ -141,8 +145,8 @@ function SpendingPulse({ txHistory }) {
           { label: 'Airtime',   val: `KSh ${airtime.toLocaleString()}` },
         ].map(s => (
           <div key={s.label} className="text-center">
-            <p className="font-grotesk font-bold text-[14px] text-foreground">{s.val}</p>
-            <p className="text-[9px] text-muted-foreground mt-0.5">{s.label}</p>
+            <p className="font-grotesk font-bold text-[14px] text-hesabu-paper">{s.val}</p>
+            <p className="text-[9px] text-hesabu-muted mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
@@ -153,19 +157,19 @@ function SpendingPulse({ txHistory }) {
 function FraudAlerts({ threats }) {
   const safeThreats = threats || [];
   if (!safeThreats.length) return (
-    <div className="glass-card rounded-2xl px-3.5 py-3 border border-primary/10 flex items-center gap-2">
-      <Zap size={12} className="text-primary shrink-0" />
-      <p className="text-[11px] text-muted-foreground">No fraud alerts this session.</p>
+    <div className="hesabu-card rounded-2xl px-3.5 py-3 flex items-center gap-2">
+      <Zap size={12} className="text-hesabu-emerald shrink-0" />
+      <p className="text-[11px] text-hesabu-muted">No fraud alerts this session.</p>
     </div>
   );
   return (
-    <div className="glass-card rounded-2xl overflow-hidden border border-red-400/10">
+    <div className="hesabu-card rounded-2xl overflow-hidden">
       {safeThreats.slice(0, 3).map((t, i) => (
-        <div key={i} className={`px-3.5 py-2.5 flex items-center gap-2 ${i < 2 ? 'border-b border-white/5' : ''}`}>
-          <div className="w-5 h-5 rounded bg-red-400/10 flex items-center justify-center shrink-0">
-            <Zap size={9} className="text-red-400" />
+        <div key={i} className={`px-3.5 py-2.5 flex items-center gap-2 ${i < 2 ? 'border-b border-hesabu-line' : ''}`}>
+          <div className="w-5 h-5 rounded bg-hesabu-danger/10 flex items-center justify-center shrink-0">
+            <Zap size={9} className="text-hesabu-danger" />
           </div>
-          <p className="text-[11px] text-foreground/80">{t.scamCategory || 'Fraud'} pattern · {t.userAction}</p>
+          <p className="text-[11px] text-hesabu-paper/80">{t.scamCategory || 'Fraud'} pattern · {t.userAction}</p>
         </div>
       ))}
     </div>
@@ -178,13 +182,13 @@ function NetworkPanel({ insights }) {
     <div className="flex flex-col gap-1.5">
       {safeInsights.length > 0 ? (
         safeInsights.map((ins, i) => (
-          <div key={i} className={`glass-card rounded-xl px-3.5 py-2.5 border ${ins?.type === 'warning' ? 'border-amber-400/15' : 'border-white/6'}`}>
-            <p className="text-[11px] text-foreground/80 leading-relaxed">{ins?.text || 'No insight'}</p>
+          <div key={i} className={`hesabu-card rounded-xl px-3.5 py-2.5 ${ins?.type === 'warning' ? 'border-hesabu-brass/30' : ''}`}>
+            <p className="text-[11px] text-hesabu-paper/80 leading-relaxed">{ins?.text || 'No insight'}</p>
           </div>
         ))
       ) : (
-        <div className="glass-card rounded-xl px-3.5 py-2.5 border border-white/6">
-          <p className="text-[11px] text-muted-foreground">Network status normal</p>
+        <div className="hesabu-card rounded-xl px-3.5 py-2.5">
+          <p className="text-[11px] text-hesabu-muted">Network status normal</p>
         </div>
       )}
     </div>
@@ -201,28 +205,28 @@ function DashboardTab() {
       </RenderGuard>
 
       <div>
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Fraud Alerts</p>
+        <p className="text-[10px] font-semibold text-hesabu-muted uppercase tracking-widest mb-2">Fraud Alerts</p>
         <RenderGuard name="Fraud Alerts">
           <FraudAlertsWidget />
         </RenderGuard>
       </div>
 
       <div>
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Network Health</p>
+        <p className="text-[10px] font-semibold text-hesabu-muted uppercase tracking-widest mb-2">Network Health</p>
         <RenderGuard name="Network Health">
           <NetworkHealthWidget />
         </RenderGuard>
       </div>
 
       <div>
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Rewards</p>
+        <p className="text-[10px] font-semibold text-hesabu-muted uppercase tracking-widest mb-2">Rewards</p>
         <RenderGuard name="Rewards">
           <RewardsWidget />
         </RenderGuard>
       </div>
 
       <div>
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">AI Memory</p>
+        <p className="text-[10px] font-semibold text-hesabu-muted uppercase tracking-widest mb-2">AI Memory</p>
         <RenderGuard name="AI Memory">
           <AIMemoryWidget />
         </RenderGuard>
@@ -395,57 +399,70 @@ export default function AI() {
 
   return (
     <AppErrorBoundary>
-    <div className="flex flex-col min-h-full">
+    <div className="hesabu-theme relative flex flex-col min-h-full">
+      {/* Ink fill anchored to the page box so the warm green-black surface spans
+          the full visible height edge-to-edge — mirrors Home / Profile / History.
+          The route's .app-scrollbar[data-chama-route] fill (gated on isHesabuRoute,
+          which now includes '/ai') handles the nav-clearance band. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 bg-hesabu-ink"
+      />
+
       {/* Header */}
       <motion.div
-        className="px-4 py-4 border-b border-primary/10 bg-background/80 backdrop-blur-xl"
+        className="px-4 py-4 border-b border-hesabu-line bg-hesabu-ink/80 backdrop-blur-xl"
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="flex items-center gap-3 mb-4">
           <motion.div
-            className="security-shield-pulse w-12 h-12 rounded-2xl gradient-green shadow-lg shadow-primary/25 flex items-center justify-center shrink-0"
+            className="security-shield-pulse w-12 h-12 rounded-2xl bg-hesabu-emerald/15 border border-hesabu-emerald/30 flex items-center justify-center shrink-0"
             animate={{ scale: [1, 1.02, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <span className="text-white font-bold text-base font-grotesk">Z</span>
+            <span className="text-hesabu-emerald font-bold text-base font-grotesk">Z</span>
           </motion.div>
           <div className="flex-1">
-            <p className="text-sm font-bold text-foreground font-grotesk">{AI_BRAND.copilotHeader}</p>
-            <p className="text-xs text-muted-foreground">Payments &middot; Bundles &middot; Fraud &middot; Network</p>
+            <p className="text-sm font-bold text-hesabu-paper font-grotesk">{AI_BRAND.copilotHeader}</p>
+            <p className="text-xs text-hesabu-muted">Payments &middot; Bundles &middot; Fraud &middot; Network</p>
           </div>
           <motion.div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/8 border border-primary/15 shadow-sm"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-hesabu-emerald/10 border border-hesabu-emerald/25"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
           >
             <motion.div
-              className="w-2 h-2 rounded-full bg-primary"
+              className="w-2 h-2 rounded-full bg-hesabu-emerald"
               animate={{ opacity: [1, 0.3, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             />
-            <span className="text-xs font-semibold text-primary">Active</span>
+            <span className="text-xs font-semibold text-hesabu-emerald">Active</span>
           </motion.div>
         </div>
 
         <div className="mb-4 grid grid-cols-4 gap-1.5">
           {COPILOT_TAGS.map(({ label, icon: Icon }) => (
-            <div key={label} className="rounded-2xl bg-white/75 border border-primary/10 px-2 py-2 text-center shadow-sm">
-              <Icon size={13} className="mx-auto mb-1 text-primary" />
-              <span className="block truncate text-[9px] font-bold text-muted-foreground">{label}</span>
+            <div key={label} className="hesabu-card rounded-2xl px-2 py-2 text-center">
+              <Icon size={13} className="mx-auto mb-1 text-hesabu-emerald" />
+              <span className="block truncate text-[9px] font-bold text-hesabu-muted">{label}</span>
             </div>
           ))}
         </div>
 
-        {/* Premium tab switcher */}
-        <motion.div className="flex gap-1 surface-panel rounded-2xl p-1.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+        {/* Tab switcher — recessed panel; the active pill uses the hesabu-emerald
+            token (not brand-green). Inactive keeps a transparent border so the
+            active border doesn't shift layout. */}
+        <motion.div className="flex gap-1 hesabu-panel rounded-2xl p-1.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
           {[['chat', 'Chat'], ['dashboard', 'Dashboard']].map(([key, label]) => (
             <motion.button
               key={key}
               onClick={() => setTab(key)}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
-                tab === key ? 'gradient-green text-black shadow-lg shadow-primary/20' : 'text-muted-foreground hover:text-foreground'
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${
+                tab === key
+                  ? 'bg-hesabu-emerald/15 text-hesabu-emerald border-hesabu-emerald/30'
+                  : 'text-hesabu-muted border-transparent hover:text-hesabu-paper'
               }`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.95 }}
@@ -478,21 +495,21 @@ export default function AI() {
                 >
                   {msg.role === 'assistant' && (
                     <motion.div
-                      className="w-8 h-8 rounded-2xl bg-primary/10 border border-primary/15 shadow-sm flex items-center justify-center shrink-0 mt-0.5"
+                      className="w-8 h-8 rounded-2xl bg-hesabu-emerald/15 border border-hesabu-emerald/30 flex items-center justify-center shrink-0 mt-0.5"
                       animate={{ scale: [1, 1.02, 1] }}
                       transition={{ duration: 2, repeat: Infinity }}
                     >
-                      <span className="text-primary font-bold text-xs font-grotesk">Z</span>
+                      <span className="text-hesabu-emerald font-bold text-xs font-grotesk">Z</span>
                     </motion.div>
                   )}
                   <div className={`${msg.id === 1 ? 'max-w-[92%]' : 'max-w-[80%]'} ${msg.role === 'user' ? 'flex flex-col items-end gap-1' : ''}`}>
                     <motion.div
                       className={`rounded-3xl px-5 py-3.5 text-sm leading-relaxed font-medium backdrop-blur ${
                         msg.role === 'user'
-                          ? 'gradient-green text-black rounded-br-lg shadow-lg shadow-primary/20'
+                          ? 'bg-hesabu-emerald/15 border border-hesabu-emerald/30 text-hesabu-paper rounded-br-lg'
                           : msg.id === 1
-                            ? 'premium-card text-foreground rounded-bl-lg'
-                            : 'surface-panel text-foreground rounded-bl-lg'
+                            ? 'hesabu-card text-hesabu-paper rounded-bl-lg'
+                            : 'bg-hesabu-surface border border-hesabu-line text-hesabu-paper rounded-bl-lg'
                       }`}
                       whileHover={{ scale: 1.01 }}
                       transition={{ duration: 0.2 }}
@@ -509,7 +526,7 @@ export default function AI() {
                       <div className="mt-1 flex items-center flex-wrap gap-1">
                         <ProviderBadge provider={msg.provider} latency={msg.latency} fallback={msg.fallback} />
                         {msg.language && msg.language !== 'en' && (
-                          <span className="text-[9px] text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded-full">{msg.language}</span>
+                          <span className="text-[9px] text-hesabu-muted bg-hesabu-surface-2 px-1.5 py-0.5 rounded-full">{msg.language}</span>
                         )}
                       </div>
                     )}
@@ -525,30 +542,30 @@ export default function AI() {
                     )}
                   </div>
                   {msg.role === 'user' && (
-                    <div className="w-7 h-7 rounded-lg bg-white/6 border border-white/8 flex items-center justify-center shrink-0 mt-0.5">
-                      <User size={11} className="text-muted-foreground" />
+                    <div className="w-7 h-7 rounded-lg bg-hesabu-surface-2 border border-hesabu-line flex items-center justify-center shrink-0 mt-0.5">
+                      <User size={11} className="text-hesabu-muted" />
                     </div>
                   )}
                 </motion.div>
               )) : (
-                <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
+                <div className="flex items-center justify-center py-8 text-hesabu-muted text-sm">
                   Loading conversation…
                 </div>
               )}
 
               {loading && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2.5">
-                  <div className="w-8 h-8 rounded-2xl bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
-                    <span className="text-primary font-bold text-[10px]">Z</span>
+                  <div className="w-8 h-8 rounded-2xl bg-hesabu-emerald/15 border border-hesabu-emerald/30 flex items-center justify-center shrink-0">
+                    <span className="text-hesabu-emerald font-bold text-[10px]">Z</span>
                   </div>
-                  <div className="surface-panel rounded-2xl rounded-bl-sm px-4 py-3.5 min-w-[172px]">
+                  <div className="bg-hesabu-surface border border-hesabu-line rounded-2xl rounded-bl-sm px-4 py-3.5 min-w-[172px]">
                     <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{AI_BRAND.thinkingLabel}</p>
+                      <span className="h-2 w-2 rounded-full bg-hesabu-emerald animate-pulse" />
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-hesabu-muted">{AI_BRAND.thinkingLabel}</p>
                     </div>
                     <div className="mt-3 space-y-2">
-                      <div className="premium-skeleton h-2.5 w-32 rounded-full" />
-                      <div className="premium-skeleton h-2.5 w-24 rounded-full" />
+                      <div className="bg-hesabu-surface-2 animate-pulse h-2.5 w-32 rounded-full" />
+                      <div className="bg-hesabu-surface-2 animate-pulse h-2.5 w-24 rounded-full" />
                     </div>
                   </div>
                 </motion.div>
@@ -563,7 +580,7 @@ export default function AI() {
                   <div className="chip-row advisor-chip-row">
                     {SUGGESTIONS.map(s => (
                       <button key={s.label} onClick={() => send(s.label, s.type)}
-                        className="premium-chip text-[11px] font-bold px-3 py-2 text-muted-foreground hover:text-foreground hover:border-primary/20 transition-all">
+                        className="shrink-0 rounded-full border bg-hesabu-surface-2 border-hesabu-line text-[11px] font-bold px-3 py-2 text-hesabu-muted hover:text-hesabu-paper hover:border-hesabu-emerald/30 transition-all">
                         {s.label}
                       </button>
                     ))}
@@ -573,24 +590,26 @@ export default function AI() {
             )}
 
             {/* Input bar */}
-            <div className="sticky bottom-0 z-20 px-4 py-3 border-t border-primary/10 bg-background/95 backdrop-blur-xl">
+            <div className="sticky bottom-0 z-20 px-4 py-3 border-t border-hesabu-line bg-hesabu-ink/95 backdrop-blur-xl">
               <div className="flex items-center gap-2">
                 <button onClick={handleVoice}
-                  className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
-                    isListening ? 'bg-primary text-black animate-pulse shadow-lg shadow-primary/20' : 'soft-icon-button text-muted-foreground'
+                  className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all border ${
+                    isListening
+                      ? 'bg-hesabu-emerald/20 text-hesabu-emerald border-hesabu-emerald/30 animate-pulse'
+                      : 'bg-hesabu-surface border-hesabu-line text-hesabu-muted'
                   }`}>
                   <Mic size={16} />
                 </button>
-                <div className="flex-1 flex items-center surface-panel rounded-2xl px-4 py-2.5 gap-2">
+                <div className="flex-1 flex items-center hesabu-panel rounded-2xl px-4 py-2.5 gap-2">
                   <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && send()}
                     placeholder="Ask anything…"
-                    className="flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none" />
-                  {input && <button onClick={() => setInput('')}><X size={13} className="text-muted-foreground" /></button>}
+                    className="flex-1 bg-transparent text-[13px] text-hesabu-paper placeholder:text-hesabu-muted outline-none" />
+                  {input && <button onClick={() => setInput('')}><X size={13} className="text-hesabu-muted" /></button>}
                 </div>
                 <button onClick={() => send()} disabled={!input.trim() || loading}
-                  className="w-10 h-10 rounded-2xl gradient-green shadow-lg shadow-primary/20 flex items-center justify-center shrink-0 disabled:opacity-25">
-                  <Send size={15} className="text-black" />
+                  className="w-10 h-10 rounded-2xl bg-hesabu-emerald/15 border border-hesabu-emerald/30 flex items-center justify-center shrink-0 disabled:opacity-25">
+                  <Send size={15} className="text-hesabu-emerald" />
                 </button>
               </div>
             </div>

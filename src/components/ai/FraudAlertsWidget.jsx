@@ -13,22 +13,22 @@ export default function FraudAlertsWidget() {
       name="Fraud Alerts"
       loader={loader}
       fallback={
-        <div className="glass-card rounded-2xl px-3.5 py-3 border border-primary/10 flex items-center gap-2">
-          <Zap size={12} className="text-primary shrink-0" />
-          <p className="text-[11px] text-muted-foreground">No fraud alerts. Scam Shield is active.</p>
+        <div className="hesabu-card rounded-2xl px-3.5 py-3 flex items-center gap-2">
+          <Zap size={12} className="text-hesabu-emerald shrink-0" />
+          <p className="text-[11px] text-hesabu-muted">No fraud alerts. Scam Shield is active.</p>
         </div>
       }
     >
       {(threats) => {
         const safeThreats = Array.isArray(threats) ? threats : [];
         return (
-          <div className="glass-card rounded-2xl overflow-hidden border border-red-400/10">
+          <div className="hesabu-card rounded-2xl overflow-hidden">
             {safeThreats.slice(0, 3).map((t, i) => (
-              <div key={i} className={`px-3.5 py-2.5 flex items-center gap-2 ${i < 2 ? 'border-b border-white/5' : ''}`}>
-                <div className="w-5 h-5 rounded bg-red-400/10 flex items-center justify-center shrink-0">
-                  <Zap size={9} className="text-red-400" />
+              <div key={i} className={`px-3.5 py-2.5 flex items-center gap-2 ${i < 2 ? 'border-b border-hesabu-line' : ''}`}>
+                <div className="w-5 h-5 rounded bg-hesabu-danger/10 flex items-center justify-center shrink-0">
+                  <Zap size={9} className="text-hesabu-danger" />
                 </div>
-                <p className="text-[11px] text-foreground/80">{t?.scamCategory || 'Fraud'} pattern · {t?.userAction}</p>
+                <p className="text-[11px] text-hesabu-paper/80">{t?.scamCategory || 'Fraud'} pattern · {t?.userAction}</p>
               </div>
             ))}
           </div>
