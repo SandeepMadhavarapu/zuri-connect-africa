@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { requestDarajaStkPush } from '../_shared/daraja-stk.ts';
 import { normalizePhone } from '../_shared/payment-lifecycle.ts';
 import { requireFunctionEnv, serviceNotConfiguredResponse } from '../_shared/function-env.ts';
+import { checkRateLimit } from '../_shared/rate-limit.ts';
 
 const APP_ORIGIN = Deno.env.get('APP_ORIGIN') ?? '';
 if (!APP_ORIGIN) console.warn('[chama-contribute] APP_ORIGIN not set - CORS will be restrictive');
@@ -180,15 +181,15 @@ Deno.serve(async (req) => {
   }
 
   // ── 7. Rate-limit check ──────────────────────────────────────────────────
-  // Same window as initiate-payment: 5 pending_payments rows per user per hour.
-  const windowStart = new Date(Date.now() - 3600_000).toISOString();
-  const { count } = await supabaseAdmin
-    .from('pending_payments')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', authUserId)
-    .gte('created_at', windowStart);
-  if ((count ?? 0) >= 5) {
-    return json({ ok: false, error: 'RATE_LIMITED', message: 'Payment limit exceeded. Try again later.' }, 429);
+  // Atomic, row-locking check via the shared check_rate_limit RPC (the same
+  // mechanism the OTP/auth path uses) — replaces the old non-atomic read-then-act
+  // COUNT, which a concurrent burst from one JWT could race past. Same policy as
+  // before: 5 contributions per user per hour. The 'chama_contribute' endpoint is
+  // a distinct bucket, keeping this limit independent of the other chama and auth
+  // limits. checkRateLimit fails closed (denies) on RPC error.
+  const rl = await checkRateLimit(supabaseAdmin, authUserId, 'user', 'chama_contribute', 5, 3600);
+  if (!rl.allowed) {
+    return json({ ok: false, error: 'RATE_LIMITED', retryAfterSeconds: rl.retryAfterSeconds }, 429);
   }
 
   // ── 8. Derive amount server-side ─────────────────────────────────────────

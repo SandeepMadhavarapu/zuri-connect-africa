@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { requireFunctionEnv, serviceNotConfiguredResponse } from '../_shared/function-env.ts';
+import { checkRateLimit } from '../_shared/rate-limit.ts';
 
 const APP_ORIGIN = Deno.env.get('APP_ORIGIN') ?? '';
 if (!APP_ORIGIN) console.warn('[create-chama-group] APP_ORIGIN not set - CORS will be restrictive');
@@ -94,17 +95,15 @@ Deno.serve(async (req) => {
   }
 
   // ── 5. Rate-limit check ──────────────────────────────────────────────────
-  // Mirrors chama-contribute's inline window-count pattern, adapted to the
-  // relevant table: a user may create at most 5 groups per hour. Prevents
-  // someone scripting hundreds of groups.
-  const windowStart = new Date(Date.now() - 3600_000).toISOString();
-  const { count } = await supabaseAdmin
-    .from('chama_groups')
-    .select('id', { count: 'exact', head: true })
-    .eq('created_by', authUserId)
-    .gte('created_at', windowStart);
-  if ((count ?? 0) >= 5) {
-    return json({ ok: false, error: 'RATE_LIMITED', message: 'Group creation limit exceeded. Try again later.' }, 429);
+  // Atomic, row-locking check via the shared check_rate_limit RPC (the same
+  // mechanism the OTP/auth path uses) — replaces the old non-atomic read-then-act
+  // COUNT, which a concurrent burst from one JWT could race past. A user may
+  // create at most 5 groups per hour. The 'chama_group_create' endpoint is a
+  // distinct bucket, keeping this limit independent of the other chama and auth
+  // limits. checkRateLimit fails closed (denies) on RPC error.
+  const rl = await checkRateLimit(supabaseAdmin, authUserId, 'user', 'chama_group_create', 5, 3600);
+  if (!rl.allowed) {
+    return json({ ok: false, error: 'RATE_LIMITED', retryAfterSeconds: rl.retryAfterSeconds }, 429);
   }
 
   // ── 6. Atomic create via SECURITY DEFINER RPC ────────────────────────────

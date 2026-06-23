@@ -206,12 +206,12 @@ describe('create-contribution-cycle: RPC error mapping', () => {
 // ── Rate limiting ──────────────────────────────────────────────────────────
 
 describe('create-contribution-cycle: rate limiting', () => {
-  it('uses a 1-hour window (3600000 ms) — same pattern as create-chama-group', () => {
-    expect(src).toMatch(/3600_?000/);
+  it('uses the atomic check_rate_limit RPC with a 1-hour (3600s) window', () => {
+    expect(src).toMatch(/checkRateLimit\([^)]*\b3600\b[^)]*\)/);
   });
 
   it('enforces a limit of 10 cycles per user per hour', () => {
-    expect(src).toMatch(/>=\s*10\b/);
+    expect(src).toMatch(/checkRateLimit\([^)]*,\s*10\s*,\s*3600\b/);
   });
 
   it('returns 429 RATE_LIMITED at or above the limit', () => {
@@ -219,11 +219,10 @@ describe('create-contribution-cycle: rate limiting', () => {
     expect(src).toMatch(/RATE_LIMITED.*429|429.*RATE_LIMITED/s);
   });
 
-  it('rate-limit query is scoped to created_by on chama_contribution_cycles', () => {
-    const idx = src.indexOf('RATE_LIMITED');
-    const block = src.slice(Math.max(0, idx - 500), idx + 50);
-    expect(block).toContain('chama_contribution_cycles');
-    expect(block).toMatch(/\.eq\(\s*['"]created_by['"]\s*,\s*authUserId\s*\)/);
+  it('rate-limit uses a per-user bucket keyed on authUserId with a distinct endpoint', () => {
+    expect(src).toMatch(
+      /checkRateLimit\(\s*supabaseAdmin\s*,\s*authUserId\s*,\s*['"]user['"]\s*,\s*['"]chama_cycle_create['"]/,
+    );
   });
 });
 

@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { requireFunctionEnv, serviceNotConfiguredResponse } from '../_shared/function-env.ts';
+import { checkRateLimit } from '../_shared/rate-limit.ts';
 
 const APP_ORIGIN = Deno.env.get('APP_ORIGIN') ?? '';
 if (!APP_ORIGIN) console.warn('[create-contribution-cycle] APP_ORIGIN not set - CORS will be restrictive');
@@ -156,16 +157,15 @@ Deno.serve(async (req) => {
   }
 
   // ── 6. Rate-limit check ──────────────────────────────────────────────────
-  // Mirrors create-chama-group's inline window-count pattern: a user may create
-  // at most 10 cycles per hour.
-  const windowStart = new Date(Date.now() - 3600_000).toISOString();
-  const { count } = await supabaseAdmin
-    .from('chama_contribution_cycles')
-    .select('id', { count: 'exact', head: true })
-    .eq('created_by', authUserId)
-    .gte('created_at', windowStart);
-  if ((count ?? 0) >= 10) {
-    return json({ ok: false, error: 'RATE_LIMITED', message: 'Cycle creation limit exceeded. Try again later.' }, 429);
+  // Atomic, row-locking check via the shared check_rate_limit RPC (the same
+  // mechanism the OTP/auth path uses) — replaces the old non-atomic read-then-act
+  // COUNT, which a concurrent burst from one JWT could race past. A user may
+  // create at most 10 cycles per hour. The 'chama_cycle_create' endpoint is a
+  // distinct bucket, keeping this limit independent of the other chama and auth
+  // limits. checkRateLimit fails closed (denies) on RPC error.
+  const rl = await checkRateLimit(supabaseAdmin, authUserId, 'user', 'chama_cycle_create', 10, 3600);
+  if (!rl.allowed) {
+    return json({ ok: false, error: 'RATE_LIMITED', retryAfterSeconds: rl.retryAfterSeconds }, 429);
   }
 
   // ── 7. Atomic create via SECURITY DEFINER RPC ────────────────────────────
