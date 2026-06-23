@@ -20,6 +20,14 @@ import {
   requireFunctionEnv,
 } from '../../supabase/functions/_shared/function-env.ts';
 
+import {
+  checkWebhookAuthConfig,
+  resolveWebhookAuthMode,
+  checkWebhookIpTrustConfig,
+  resolveTrustedClientIp,
+  getWebhookTrustedProxyDepth,
+} from '../../supabase/functions/_shared/payment-env.ts';
+
 const ROOT = process.cwd();
 
 const ENV_KEYS = [
@@ -33,6 +41,7 @@ const ENV_KEYS = [
   'GEMINI_API_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY',
   'MPESA_WEBHOOK_SECRET', 'WEBHOOK_SECRET',
   'WEBHOOK_SKIP_SIGNATURE', 'WEBHOOK_SKIP_IP_CHECK',
+  'WEBHOOK_TRUSTED_SIGNING_PROXY', 'WEBHOOK_TRUSTED_PROXY_DEPTH',
 ];
 
 function snap() {
@@ -303,6 +312,123 @@ describe('Edge Function env validator', () => {
       alwaysRequired: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'],
     });
     expect(r.ok).toBe(true);
+  });
+});
+
+describe('webhook authenticity config — MED-2 fail-closed at init', () => {
+  let s;
+  beforeEach(() => {
+    s = snap();
+    for (const k of ENV_KEYS) delete process.env[k];
+  });
+  afterEach(() => restore(s));
+
+  it('production with NEITHER secret nor trusted proxy fails closed', () => {
+    process.env.DARAJA_ENV = 'production';
+    const r = checkWebhookAuthConfig();
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('webhook_secret_or_trusted_proxy_required');
+  });
+
+  it('staging with no secret fails closed', () => {
+    process.env.APP_ENV = 'staging';
+    const r = checkWebhookAuthConfig();
+    expect(r.ok).toBe(false);
+  });
+
+  it('production with MPESA_WEBHOOK_SECRET resolves to hmac mode', () => {
+    process.env.DARAJA_ENV = 'production';
+    process.env.MPESA_WEBHOOK_SECRET = 'shh';
+    const r = checkWebhookAuthConfig();
+    expect(r.ok).toBe(true);
+    expect(r.mode).toBe('hmac');
+    expect(resolveWebhookAuthMode()).toBe('hmac');
+  });
+
+  it('production with WEBHOOK_TRUSTED_SIGNING_PROXY=true resolves to trusted_proxy mode', () => {
+    process.env.APP_ENV = 'production';
+    process.env.WEBHOOK_TRUSTED_SIGNING_PROXY = 'true';
+    const r = checkWebhookAuthConfig();
+    expect(r.ok).toBe(true);
+    expect(r.mode).toBe('trusted_proxy');
+  });
+
+  it('a configured secret takes precedence over the proxy flag (hmac wins)', () => {
+    process.env.DARAJA_ENV = 'production';
+    process.env.MPESA_WEBHOOK_SECRET = 'shh';
+    process.env.WEBHOOK_TRUSTED_SIGNING_PROXY = 'true';
+    expect(resolveWebhookAuthMode()).toBe('hmac');
+  });
+
+  it('sandbox with no secret is allowed (not production tier)', () => {
+    process.env.DARAJA_ENV = 'sandbox';
+    process.env.APP_ENV = 'sandbox';
+    const r = checkWebhookAuthConfig();
+    expect(r.ok).toBe(true);
+    expect(r.mode).toBe('unconfigured');
+  });
+});
+
+describe('trusted client-IP source — MED-1 fail-closed at init', () => {
+  let s;
+  beforeEach(() => {
+    s = snap();
+    for (const k of ENV_KEYS) delete process.env[k];
+  });
+  afterEach(() => restore(s));
+
+  it('production without WEBHOOK_TRUSTED_PROXY_DEPTH fails closed', () => {
+    process.env.DARAJA_ENV = 'production';
+    const r = checkWebhookIpTrustConfig();
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('trusted_proxy_depth_required');
+  });
+
+  it('production with a valid depth is allowed', () => {
+    process.env.DARAJA_ENV = 'production';
+    process.env.WEBHOOK_TRUSTED_PROXY_DEPTH = '2';
+    const r = checkWebhookIpTrustConfig();
+    expect(r.ok).toBe(true);
+    expect(r.depth).toBe(2);
+  });
+
+  it('non-numeric / zero depth is treated as unset (null) and fails closed in prod', () => {
+    process.env.DARAJA_ENV = 'production';
+    process.env.WEBHOOK_TRUSTED_PROXY_DEPTH = 'abc';
+    expect(getWebhookTrustedProxyDepth()).toBeNull();
+    expect(checkWebhookIpTrustConfig().ok).toBe(false);
+    process.env.WEBHOOK_TRUSTED_PROXY_DEPTH = '0';
+    expect(getWebhookTrustedProxyDepth()).toBeNull();
+    expect(checkWebhookIpTrustConfig().ok).toBe(false);
+  });
+
+  it('sandbox without depth is allowed (depth null)', () => {
+    process.env.APP_ENV = 'local';
+    const r = checkWebhookIpTrustConfig();
+    expect(r.ok).toBe(true);
+    expect(r.depth).toBeNull();
+  });
+
+  it('resolveTrustedClientIp reads the Nth-from-right entry, never the spoofed leftmost', () => {
+    // Attacker prepends a Safaricom IP; trusted chain appends real hops to the right.
+    const xff = '196.201.214.206, 41.90.1.1, 10.0.0.9';
+    // depth=2 → second from the right = the IP the trusted edge actually saw.
+    expect(resolveTrustedClientIp(xff, null, 2)).toBe('41.90.1.1');
+    // depth=1 → rightmost (closest trusted hop).
+    expect(resolveTrustedClientIp(xff, null, 1)).toBe('10.0.0.9');
+    // The leftmost (attacker-controlled) value is never returned for any depth.
+    expect(resolveTrustedClientIp(xff, null, 3)).toBe('196.201.214.206');
+  });
+
+  it('resolveTrustedClientIp returns unknown when the chain is shorter than depth', () => {
+    expect(resolveTrustedClientIp('10.0.0.9', null, 2)).toBe('unknown');
+    expect(resolveTrustedClientIp('', null, 1)).toBe('unknown');
+    expect(resolveTrustedClientIp(null, null, 1)).toBe('unknown');
+  });
+
+  it('resolveTrustedClientIp falls back to x-real-ip (not leftmost XFF) when depth is null', () => {
+    expect(resolveTrustedClientIp('1.2.3.4, 5.6.7.8', '9.9.9.9', null)).toBe('9.9.9.9');
+    expect(resolveTrustedClientIp('1.2.3.4', null, null)).toBe('unknown');
   });
 });
 

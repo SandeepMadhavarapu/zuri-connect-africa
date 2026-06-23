@@ -81,13 +81,24 @@ describe('payment-env: skip-flag gating', () => {
     expect(areWebhookSkipFlagsAllowed()).toBe(false);
   });
 
-  it('allows skip flags only when explicitly set in sandbox', () => {
+  it('allows skip flags when DARAJA_ENV=sandbox AND APP_ENV is explicitly sandbox', () => {
     process.env.DARAJA_ENV = 'sandbox';
+    process.env.APP_ENV = 'sandbox';
     process.env.WEBHOOK_SKIP_SIGNATURE = 'true';
     const state = resolveWebhookSkipFlags();
     expect(state.refusedInProduction).toBe(false);
     expect(state.skipSignatureEffective).toBe(true);
-    expect(getAppEnv()).toBe('unknown'); // unset is fine when DARAJA_ENV is sandbox
+  });
+
+  it('INFO-8: refuses skip flags when DARAJA_ENV=sandbox but APP_ENV is unset (fail closed)', () => {
+    process.env.DARAJA_ENV = 'sandbox';
+    // APP_ENV intentionally unset → getAppEnv() === 'unknown' must NOT bypass.
+    process.env.WEBHOOK_SKIP_SIGNATURE = 'true';
+    const state = resolveWebhookSkipFlags();
+    expect(getAppEnv()).toBe('unknown');
+    expect(areWebhookSkipFlagsAllowed()).toBe(false);
+    expect(state.refusedInProduction).toBe(true);
+    expect(state.skipSignatureEffective).toBe(false);
   });
 
   it('allows skip flags when APP_ENV=local', () => {

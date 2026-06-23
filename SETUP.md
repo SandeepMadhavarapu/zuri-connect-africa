@@ -76,6 +76,17 @@ gate CI / release pipelines on it.
   **Supabase Edge Function secrets** (never as VITE_*).
 - `WEBHOOK_SKIP_SIGNATURE` and `WEBHOOK_SKIP_IP_CHECK` unset (or anything
   other than `true`). The webhook handler refuses them in production.
+- Webhook callback authenticity — exactly ONE of:
+  - `MPESA_WEBHOOK_SECRET` set (a fronting gateway signs callbacks; HMAC
+    verified), OR
+  - `WEBHOOK_TRUSTED_SIGNING_PROXY=true` (an out-of-band gateway already
+    authenticates every callback before it reaches the function).
+  With neither set, the webhook handler fails closed at init (`503`) rather than
+  `401`-ing every genuine Daraja callback.
+- `WEBHOOK_TRUSTED_PROXY_DEPTH` — the number of trusted proxy hops that front
+  the webhook function. The client IP is read as the Nth entry from the right of
+  `X-Forwarded-For` (never the spoofable leftmost). Required in production; the
+  handler fails closed at init (`503`) if it is unset.
 
 ### What `prepitch` checks
 - `npm run lint` — code quality.

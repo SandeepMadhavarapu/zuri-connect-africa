@@ -6,7 +6,14 @@ import {
   finalizeDarajaPayment,
   parseDarajaStkCallback,
 } from '../_shared/payment-lifecycle.ts';
-import { resolveWebhookSkipFlags } from '../_shared/payment-env.ts';
+import {
+  resolveWebhookSkipFlags,
+  checkWebhookAuthConfig,
+  checkWebhookIpTrustConfig,
+  resolveTrustedClientIp,
+  getAppEnv,
+  getDarajaEnv,
+} from '../_shared/payment-env.ts';
 import { requireFunctionEnv, serviceNotConfiguredResponse } from '../_shared/function-env.ts';
 import {
   verifyWebhookSignature,
@@ -27,14 +34,20 @@ import {
 //                             when DARAJA_ENV=sandbox or APP_ENV is local /
 //                             demo / sandbox. Production refuses the flag and
 //                             emits `webhook.skip_flag_refused`.
-//   3. **Callback secret**  — When `MPESA_WEBHOOK_SECRET` (or per-provider
-//                             secret) is configured, we verify the HMAC
-//                             header. Daraja itself does NOT sign callbacks
-//                             out-of-the-box — operators must front the
-//                             function behind a gateway that signs (e.g.
-//                             Supabase webhook proxy, custom edge) OR rely on
-//                             the IP allowlist + CheckoutRequestID matching.
-//                             `WEBHOOK_SKIP_SIGNATURE` is similarly gated.
+//   3. **Callback secret**  — Daraja does NOT sign callbacks out-of-the-box.
+//                             Production MUST declare ONE explicit authenticity
+//                             mode, enforced fail-closed at init by
+//                             checkWebhookAuthConfig():
+//                               * HMAC: MPESA_WEBHOOK_SECRET set + a fronting
+//                                 signing gateway injects x-mpesa-signature,
+//                                 verified here; OR
+//                               * Trusted proxy: WEBHOOK_TRUSTED_SIGNING_PROXY
+//                                 =true asserts an out-of-band gateway already
+//                                 authenticated the callback.
+//                             "IP allowlist only, no secret" is NOT supported in
+//                             production — the IP layer is defense-in-depth, not
+//                             the authenticity gate. `WEBHOOK_SKIP_SIGNATURE` is
+//                             honoured only in sandbox/local/demo.
 //   4. **Replay window**    — `webhook_nonces` UNIQUE (signature, payload_hash)
 //                             prevents replay of a signed body.
 //   5. **Payload matching** — Pending payment lookup uses CheckoutRequestID
@@ -179,13 +192,42 @@ Deno.serve(async (req) => {
     functionName: 'webhook-handler',
     // APP_ORIGIN is intentionally absent — webhooks are server-to-server.
     required:       ['APP_ENV', 'DARAJA_ENV'],
-    // MPESA_WEBHOOK_SECRET is enforced by the verification path itself
-    // (skip flags are rejected in production). Listed here so it surfaces
-    // in startup logs if absent.
+    // Webhook authenticity is enforced separately by checkWebhookAuthConfig
+    // (production requires MPESA_WEBHOOK_SECRET OR WEBHOOK_TRUSTED_SIGNING_PROXY).
+    // Listed optional here only so absence surfaces in startup logs.
     optional:       ['MPESA_WEBHOOK_SECRET', 'WEBHOOK_SECRET'],
     alwaysRequired: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'],
   });
   if (!envCheck.ok) return serviceNotConfiguredResponse(corsHeaders);
+
+  // Fail closed LOUDLY at init (MED-2): a production deployment with neither a
+  // webhook secret nor an explicit trusted-signing-proxy would 401 every genuine
+  // (unsigned) Daraja callback and silently stop settling payments. A 503 here is
+  // visible to ops monitoring; a per-request 401 storm masquerades as "working".
+  const authConfig = checkWebhookAuthConfig();
+  if (!authConfig.ok) {
+    console.error('[webhook-handler] webhook_auth_misconfigured', {
+      reason:     authConfig.reason,
+      app_env:    getAppEnv(),
+      daraja_env: getDarajaEnv(),
+      hint:       'set MPESA_WEBHOOK_SECRET (signing gateway) OR WEBHOOK_TRUSTED_SIGNING_PROXY=true',
+    });
+    return serviceNotConfiguredResponse(corsHeaders);
+  }
+
+  // Fail closed LOUDLY at init (MED-1): the Safaricom IP allowlist is only
+  // meaningful if the client IP is read from a trusted, non-spoofable position
+  // in X-Forwarded-For. Production must declare the trusted proxy hop count.
+  const ipTrustConfig = checkWebhookIpTrustConfig();
+  if (!ipTrustConfig.ok) {
+    console.error('[webhook-handler] webhook_ip_trust_misconfigured', {
+      reason:     ipTrustConfig.reason,
+      app_env:    getAppEnv(),
+      daraja_env: getDarajaEnv(),
+      hint:       'set WEBHOOK_TRUSTED_PROXY_DEPTH to the number of trusted proxy hops fronting this function',
+    });
+    return serviceNotConfiguredResponse(corsHeaders);
+  }
 
   const url = Deno.env.get('SUPABASE_URL') ?? '';
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -199,9 +241,14 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: 'PAYLOAD_TOO_LARGE' }, 413);
     }
 
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      || req.headers.get('x-real-ip')
-      || 'unknown';
+    // MED-1: read the client IP from the TRUSTED position (Nth-from-right of the
+    // X-Forwarded-For chain, per WEBHOOK_TRUSTED_PROXY_DEPTH), never the leftmost
+    // client-controlled entry. Production depth is enforced at init above.
+    const clientIp = resolveTrustedClientIp(
+      req.headers.get('x-forwarded-for'),
+      req.headers.get('x-real-ip'),
+      ipTrustConfig.depth,
+    );
     const signature = req.headers.get('x-webhook-signature')
       || req.headers.get('x-mpesa-signature')
       || req.headers.get('x-hub-signature-256');
@@ -257,7 +304,10 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: 'IP_NOT_ALLOWED' }, 403);
     }
 
-    const skipSignature = skipState.skipSignatureEffective;
+    // Trusted-signing-proxy mode (MED-2): an upstream gateway already
+    // authenticated the callback, so we do not require our own HMAC secret. HMAC
+    // mode still verifies normally; sandbox skip flags are unchanged.
+    const skipSignature = skipState.skipSignatureEffective || authConfig.mode === 'trusted_proxy';
     if (!skipSignature) {
       const secret = Deno.env.get(provider === 'mpesa' ? 'MPESA_WEBHOOK_SECRET' : 'WEBHOOK_SECRET') || '';
       const verification = await verifyWebhookSignature(rawBody, signature, timestamp, secret);

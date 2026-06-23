@@ -1,6 +1,14 @@
 // Production webhook verifier used by webhook-handler/index.ts.
 // These are the exact functions that run in production when Daraja calls back
 // with a payment confirmation. Extracted here so they can be unit-tested directly.
+//
+// FAIL-CLOSED: a missing signature header OR an unset secret returns
+// { valid: false } (missing_signature / no_secret_configured) — verification
+// never passes "by absence". Because Daraja does NOT sign callbacks, production
+// must run in HMAC mode (a fronting signing gateway) or assert a trusted signing
+// proxy (WEBHOOK_TRUSTED_SIGNING_PROXY). "IP allowlist only, no secret" is NOT a
+// supported production configuration; checkWebhookAuthConfig (payment-env.ts)
+// enforces this at init so this verifier never silently 401s real callbacks.
 
 export const TIMESTAMP_TOLERANCE_SECONDS = 300;
 
