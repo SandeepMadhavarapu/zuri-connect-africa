@@ -232,18 +232,16 @@ else {
   for (const h of pitchHits) fail(`Pitch overclaim in ${h.rel}: "${h.needle}" — ${h.reason}`);
 }
 
-// ── 7. Home + Budget honest-disclaimer presence ──────────────────────────
-console.log('[prepitch] 7/7 Verifying Home directory banner + Budget sample disclaimer present…');
-const HOME_FILE   = join(ROOT, 'src', 'pages', 'Home.jsx');
+// ── 7. Budget honest-disclaimer presence ─────────────────────────────────
+//
+// The Home directory-preview banner check was removed: the EcosystemGrid
+// PayBill directory it disclaimed was intentionally dropped from the Hesabu
+// surface, so the banner is correctly absent. The Budget sample/preview
+// disclaimer remains a separate, still-valid check (dormant until Budget.jsx
+// exists, then enforced).
+console.log('[prepitch] 7/7 Verifying Budget sample disclaimer present…');
 const BUDGET_FILE = join(ROOT, 'src', 'pages', 'Budget.jsx');
 let disclaimersOk = true;
-if (existsSync(HOME_FILE)) {
-  const txt = readFileSync(HOME_FILE, 'utf8');
-  if (!/Service directory preview/i.test(txt) || !/verified provider source/i.test(txt)) {
-    fail('src/pages/Home.jsx is missing the directory preview banner.');
-    disclaimersOk = false;
-  }
-}
 if (existsSync(BUDGET_FILE)) {
   const txt = readFileSync(BUDGET_FILE, 'utf8');
   if (!/sample data/i.test(txt) || !/Preview analysis/i.test(txt)) {
@@ -251,7 +249,7 @@ if (existsSync(BUDGET_FILE)) {
     disclaimersOk = false;
   }
 }
-if (disclaimersOk) ok('Home directory banner + Budget sample disclaimer present.');
+if (disclaimersOk) ok('Budget sample disclaimer present.');
 
 console.log('');
 if (warnings.length) {
