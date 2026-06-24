@@ -38,9 +38,6 @@ describe('ledger concurrency migration: SQL contract', () => {
   it('grants advisory lock helpers to service_role only', () => {
     expect(migration).toMatch(/REVOKE ALL ON FUNCTION public\.ledger_tx_lock_key\(TEXT\) FROM PUBLIC, anon, authenticated/);
     expect(migration).toMatch(/GRANT EXECUTE ON FUNCTION public\.ledger_tx_lock_key\(TEXT\) TO service_role/);
-    expect(migration).toMatch(/REVOKE ALL ON FUNCTION public\.payment_finalize_lock_key\(UUID\) FROM PUBLIC, anon, authenticated/);
-    expect(migration).toMatch(/GRANT EXECUTE ON FUNCTION public\.payment_finalize_lock_key\(UUID\) TO service_role/);
-    expect(migration).toMatch(/lock_pending_payment_for_finalization is service_role only/);
   });
 
   it('writes a result cache that is consulted before any insert', () => {
@@ -75,10 +72,18 @@ describe('ledger concurrency migration: SQL contract', () => {
     expect(migration).toMatch(/IF v_credit_row\.id IS NULL THEN[\s\S]*claim_ledger_chain_slot/);
   });
 
-  it('exposes per-pending-payment lock RPC for the webhook/admin path', () => {
-    expect(migration).toMatch(/CREATE OR REPLACE FUNCTION public\.lock_pending_payment_for_finalization\(p_id UUID\)/);
-    expect(migration).toMatch(/PERFORM pg_advisory_xact_lock\(public\.payment_finalize_lock_key\(p_id\)\)/);
-    expect(migration).toMatch(/GRANT EXECUTE ON FUNCTION public\.lock_pending_payment_for_finalization\(UUID\) TO service_role/);
+  it('drops the dead per-pending-payment finalization lock (INFO-7)', () => {
+    // The lock was never called; the real double-post defenses are the
+    // per-transaction_ref advisory lock inside post_double_entry, the
+    // webhook_events UNIQUE de-dup, and the ledger_idempotency_keys cache. A
+    // follow-up migration removes the dead function + its sole-purpose key helper
+    // so the codebase does not imply a lock that is never taken.
+    const dropMigration = readFileSync(
+      resolve(process.cwd(), 'supabase/migrations/20260624130000_drop_dead_finalization_lock.sql'),
+      'utf8',
+    );
+    expect(dropMigration).toMatch(/DROP FUNCTION IF EXISTS public\.lock_pending_payment_for_finalization\(UUID\)/);
+    expect(dropMigration).toMatch(/DROP FUNCTION IF EXISTS public\.payment_finalize_lock_key\(UUID\)/);
   });
 });
 

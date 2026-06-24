@@ -91,6 +91,44 @@ describe('payment lifecycle helpers', () => {
     expect(pending).not.toHaveProperty('ledger_posted_at');
   });
 
+  it('rejects a fractional KES amount at intake (LOW-5)', () => {
+    // M-Pesa moves only whole KES and the STK push sends Math.ceil(amount), so a
+    // fractional stored amount can never equal the integer callback Amount. Reject
+    // at intake instead of dead-ending the payment in review_required.
+    expect(() => buildPendingPaymentRecord({
+      userId: 'user-1',
+      normalizedFromPhone: '254712345678',
+      body: {
+        tx_ref: 'TX-FRAC',
+        idempotency_key: 'idem-frac',
+        payment_type: 'send',
+        amount: 100.5,
+        from_phone: '+254712345678',
+        to_phone: '+254723456789',
+      },
+    })).toThrow('AMOUNT_NOT_INTEGER');
+  });
+
+  it('integer amount is stored == STK Amount == callback Amount (LOW-5)', () => {
+    const pending = buildPendingPaymentRecord({
+      userId: 'user-1',
+      normalizedFromPhone: '254712345678',
+      body: {
+        tx_ref: 'TX-INT',
+        idempotency_key: 'idem-int',
+        payment_type: 'send',
+        amount: 100,
+        from_phone: '+254712345678',
+        to_phone: '+254723456789',
+      },
+    });
+    // daraja-stk.ts sends Math.ceil(amount); for an integer that equals the stored
+    // amount, which is exactly what M-Pesa echoes back in the callback Amount, so
+    // the amount-match check can never spuriously fail.
+    expect(Number.isInteger(pending.amount)).toBe(true);
+    expect(Math.ceil(pending.amount)).toBe(pending.amount);
+  });
+
   it('webhook success posts exactly one debit and one credit', async () => {
     const postDoubleEntry = vi.fn().mockResolvedValue({ ok: true });
     const updatePendingPayment = vi.fn().mockResolvedValue({ ok: true });

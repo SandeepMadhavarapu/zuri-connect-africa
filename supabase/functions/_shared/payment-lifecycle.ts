@@ -97,6 +97,11 @@ export function buildPendingPaymentRecord({
   correlationRef?: string;
 }) {
   const amount = normalizeMoneyAmount(body.amount);
+  // LOW-5: M-Pesa moves only whole KES and the STK push sends Math.ceil(amount),
+  // so a fractional stored amount can never equal the integer callback Amount and
+  // would dead-end every such payment in review_required. Reject at intake so the
+  // stored amount, the STK Amount, and the callback Amount are the same integer.
+  if (!Number.isInteger(amount)) throw new Error('AMOUNT_NOT_INTEGER');
   const txRef = String(body.tx_ref || '').trim();
   const idempotencyKey = String(body.idempotency_key || '').trim();
   const paymentType = String(body.payment_type || 'send').trim();

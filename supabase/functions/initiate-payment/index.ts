@@ -415,13 +415,25 @@ Deno.serve(async (req) => {
 
     return json(pendingResponse({ id: pending.id, tx_ref: pendingRecord.tx_ref, status: 'processing' }));
   } catch (error) {
+    // LOW-6: the thrown message can embed the verbatim Daraja HTTP/OAuth body
+    // (daraja-stk.ts). pending_payments rows are owner-readable (whole-row SELECT
+    // via pending_payments_select_own), so persist only a generic message in
+    // result_desc and keep the raw provider text in the server log (service-only).
+    const rawMessage = error instanceof Error ? error.message : 'Unknown initiation failure';
     await supabaseAdmin.from('pending_payments').update({
       status: 'failed',
       result_code: 'INITIATION_FAILED',
-      result_desc: error instanceof Error ? error.message : 'Unknown initiation failure',
+      result_desc: 'Payment initiation failed. Please try again.',
       updated_at: new Date().toISOString(),
     }).eq('id', pending.id);
-    console.error('[initiate-payment]', error);
+    console.error(JSON.stringify({
+      ts: new Date().toISOString(),
+      fn: 'initiate-payment',
+      evt: 'stk_initiation_failed',
+      pending_id: pending.id,
+      tx_ref: pendingRecord.tx_ref,
+      error: rawMessage,
+    }));
     return json({ ok: false, error: 'INITIATION_FAILED', message: 'Payment initiation is temporarily unavailable. Please try again.' }, 500);
   }
 });
