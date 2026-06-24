@@ -1,11 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Activity, Info, Lock, ShieldCheck, Wifi } from 'lucide-react';
+import { Activity, Lock, ShieldCheck, Wifi } from 'lucide-react';
 import RenderGuard from '@/components/system/RenderGuard';
 import BalanceCard from '../components/home/BalanceCard';
 import QuickActionsGrid from '../components/home/QuickActionsGrid';
 import RecentActivity from '../components/home/RecentActivity';
-import EcosystemGrid from '../components/ecosystem/EcosystemGrid';
+// EcosystemGrid (the "Explore Services" PayBill directory) is intentionally not
+// rendered on the Hesabu surface — it's Zuri super-app surface that doesn't fit
+// the chama-treasury product. Component/data files are kept in the repo for now.
+// import EcosystemGrid from '../components/ecosystem/EcosystemGrid';
 import SmartHeroCard from '../components/home/SmartHeroCard';
 import AITimeline from '../components/home/AITimeline';
 import DynamicWidgets from '../components/home/DynamicWidgets';
@@ -130,23 +133,16 @@ export default function Home() {
         </RenderGuard>
       </motion.div>
 
-      <motion.div className="px-4 mt-4" variants={itemVariants}>
+      <motion.div className="px-4 mt-4 mb-2" variants={itemVariants}>
         <RenderGuard name="AI Timeline">
           <AITimeline />
         </RenderGuard>
       </motion.div>
 
-      <motion.div className="px-4 mt-4 mb-2" variants={itemVariants}>
-        <div className="mb-3 rounded-2xl border border-hesabu-line bg-hesabu-surface px-3.5 py-3 flex items-start gap-2.5">
-          <Info size={13} className="text-hesabu-brass mt-0.5 shrink-0" />
-          <p className="text-[11px] leading-relaxed text-hesabu-muted">
-            Service directory preview — PayBill/Till entries require verified provider sources before production use.
-          </p>
-        </div>
-        <RenderGuard name="Ecosystem">
-          <EcosystemGrid />
-        </RenderGuard>
-      </motion.div>
+      {/* "Explore Services" ecosystem directory (EcosystemGrid) intentionally
+          removed from the Hesabu surface — see import note above. The
+          accompanying "Service directory preview" caption was removed with it so
+          no empty/dead section remains. */}
       </motion.div>
     </div>
   );
