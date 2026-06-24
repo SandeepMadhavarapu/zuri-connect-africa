@@ -6,6 +6,13 @@ export type DarajaCallback = {
   receiptNumber: string | null;
   amount: number | null;
   phoneNumber: string | null;
+  /**
+   * AccountReference echoed back by Daraja (BillRefNumber, or an AccountReference
+   * /BillRefNumber item in CallbackMetadata depending on the callback variant).
+   * Carries our server-generated correlation_ref. Orphan-recovery key only
+   * (MED-3) — never used to trust amounts/phones. null when not present.
+   */
+  accountReference: string | null;
 };
 
 export type PendingPayment = {
@@ -20,6 +27,8 @@ export type PendingPayment = {
   idempotency_key?: string | null;
   status: string;
   ledger_posted_at?: string | null;
+  /** Server-generated ≤12-char STK AccountReference, echoed in the callback (MED-3). */
+  correlation_ref?: string | null;
 };
 
 export type PaymentReconciliationEvent = {
@@ -56,14 +65,36 @@ export function normalizeMoneyAmount(amount: unknown): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
+/**
+ * Server-generated correlation key sent as the Daraja STK Push AccountReference
+ * (MED-3 orphan recovery). It is persisted on the pending row BEFORE the STK
+ * network call and echoed back by Daraja in the callback, so a callback whose
+ * checkout_request_id was never written back (crash window) is still re-linkable
+ * to its pending row.
+ *
+ * Constraints: ≤12 chars (Daraja's AccountReference limit) and alphanumeric.
+ * Built from 8 CSPRNG bytes (~48 bits after truncation); the partial UNIQUE
+ * index on pending_payments.correlation_ref is the hard collision backstop.
+ */
+export function generateCorrelationRef(): string {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  let out = '';
+  for (const b of bytes) out += b.toString(36).padStart(2, '0');
+  return out.slice(0, 12).toUpperCase();
+}
+
 export function buildPendingPaymentRecord({
   body,
   userId,
   normalizedFromPhone,
+  correlationRef = generateCorrelationRef(),
 }: {
   body: Record<string, unknown>;
   userId: string;
   normalizedFromPhone: string;
+  /** Override the generated correlation_ref (tests / callers that pre-generate). */
+  correlationRef?: string;
 }) {
   const amount = normalizeMoneyAmount(body.amount);
   const txRef = String(body.tx_ref || '').trim();
@@ -93,6 +124,10 @@ export function buildPendingPaymentRecord({
     from_phone: normalizedFromPhone,
     to_phone: recipient,
     description: String(body.description || '').trim(),
+    // Server-generated orphan-recovery key (MED-3). Persisted at INSERT, sent as
+    // the STK AccountReference, echoed back in the callback. The user-facing
+    // biller account_reference is unchanged below in metadata.
+    correlation_ref: correlationRef,
     metadata: {
       ...(typeof body.metadata === 'object' && body.metadata !== null ? body.metadata : {}),
       account_reference: accountReference,
@@ -113,6 +148,14 @@ function callbackValue(items: Record<string, unknown>[], name: string): unknown 
   return items.find((item) => item.Name === name)?.Value ?? null;
 }
 
+/** First value that is non-null/undefined and non-blank, stringified+trimmed. */
+function firstNonEmpty(...values: unknown[]): string | null {
+  for (const v of values) {
+    if (v !== null && v !== undefined && String(v).trim() !== '') return String(v).trim();
+  }
+  return null;
+}
+
 export function parseDarajaStkCallback(payload: Record<string, unknown>): DarajaCallback {
   const stk = (payload.Body as Record<string, unknown> | undefined)?.stkCallback as Record<string, unknown> | undefined;
   if (!stk) throw new Error('UNSUPPORTED_DARAJA_CALLBACK');
@@ -125,12 +168,58 @@ export function parseDarajaStkCallback(payload: Record<string, unknown>): Daraja
     receiptNumber: callbackValue(items, 'MpesaReceiptNumber') ? String(callbackValue(items, 'MpesaReceiptNumber')) : null,
     amount: callbackValue(items, 'Amount') === null ? null : Number(callbackValue(items, 'Amount')),
     phoneNumber: callbackValue(items, 'PhoneNumber') ? String(callbackValue(items, 'PhoneNumber')) : null,
+    // Echoed AccountReference for orphan recovery (MED-3). Daraja surfaces it as
+    // a top-level BillRefNumber on stkCallback, or as an AccountReference /
+    // BillRefNumber item inside CallbackMetadata, depending on the variant.
+    accountReference: firstNonEmpty(
+      stk.BillRefNumber,
+      stk.AccountReference,
+      callbackValue(items, 'AccountReference'),
+      callbackValue(items, 'BillRefNumber'),
+    ),
   };
   if (!callback.checkoutRequestId) throw new Error('MISSING_CHECKOUT_REQUEST_ID');
   if (!callback.merchantRequestId) throw new Error('MISSING_MERCHANT_REQUEST_ID');
   if (!callback.resultCode) throw new Error('MISSING_RESULT_CODE');
   if (callback.resultCode === '0' && !callback.receiptNumber) throw new Error('MISSING_MPESA_RECEIPT');
   return callback;
+}
+
+/**
+ * Resolves a callback to its pending row. The order is load-bearing and must not
+ * change: the checkout_request_id / merchant_request_id arms run FIRST so the
+ * happy path is byte-for-byte unchanged. The correlation_ref arm is the MED-3
+ * orphan-recovery FALLBACK — it only runs when the first two miss (i.e. the
+ * checkout/merchant ids were never persisted) AND the callback echoed an
+ * AccountReference. Dependency-injected so it is unit-testable without a DB.
+ */
+export type PendingPaymentFinder = {
+  byCheckoutRequestId: (checkoutRequestId: string) => Promise<PendingPayment | null>;
+  byMerchantRequestId: (merchantRequestId: string) => Promise<PendingPayment | null>;
+  byCorrelationRef: (correlationRef: string) => Promise<PendingPayment | null>;
+};
+
+export async function findPendingPaymentByCallback(
+  finder: PendingPaymentFinder,
+  callback: Pick<DarajaCallback, 'checkoutRequestId' | 'merchantRequestId' | 'accountReference'>,
+): Promise<PendingPayment | null> {
+  // Arm 1 (primary — unchanged happy path): checkout_request_id.
+  if (callback.checkoutRequestId) {
+    const byCheckout = await finder.byCheckoutRequestId(callback.checkoutRequestId);
+    if (byCheckout) return byCheckout;
+  }
+  // Arm 2 (unchanged): merchant_request_id.
+  if (callback.merchantRequestId) {
+    const byMerchant = await finder.byMerchantRequestId(callback.merchantRequestId);
+    if (byMerchant) return byMerchant;
+  }
+  // Arm 3 (MED-3 orphan recovery, fallback only): echoed AccountReference ==
+  // server-generated correlation_ref persisted before the STK call.
+  if (callback.accountReference) {
+    const byRef = await finder.byCorrelationRef(callback.accountReference);
+    if (byRef) return byRef;
+  }
+  return null;
 }
 
 export function callbackStatus(callback: DarajaCallback): string {

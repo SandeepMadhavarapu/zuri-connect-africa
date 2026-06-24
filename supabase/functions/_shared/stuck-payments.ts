@@ -53,6 +53,7 @@ export type StuckRow = {
   to_phone: string;
   checkout_request_id?: string | null;
   merchant_request_id?: string | null;
+  correlation_ref?: string | null;
   updated_at?: string | null;
   created_at?: string | null;
 };
@@ -285,4 +286,107 @@ function ageInMinutes(row: StuckRow, now: Date): number {
   const t = new Date(ref).getTime();
   if (!Number.isFinite(t)) return Infinity;
   return Math.max(0, Math.round((now.getTime() - t) / 60_000));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MED-3 — unmatchable-orphan surfacing.
+//
+// Pending rows stuck in processing/waiting_for_mpesa with NULL checkout_request_id
+// are the MED-3 orphan: a crash between Daraja accepting the STK push and the
+// checkout_request_id write-back. They CANNOT be re-queried via the Daraja STK
+// Query API (no CheckoutRequestID to query with). The normal callback path now
+// re-links them via correlation_ref when a callback arrives; but if none arrives
+// within the stuck threshold we must NOT let the generic sweep silently mark them
+// 'timeout' — that masks a possible real debit. Instead we surface each into the
+// manual-review queue with a dedicated `webhook.orphan_recovered` audit event.
+//
+// This runs BEFORE sweepStuckPendingPayments so the surfaced rows are already
+// 'review_required' and the generic sweep no longer sees (or times out) them.
+// Pure + dependency-injected so it is unit-testable without Postgres.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type OrphanSweepDeps = {
+  /** Rows in processing/waiting_for_mpesa with NULL checkout_request_id older than the cutoff. */
+  fetchOrphans: (cutoffIso: string) => Promise<StuckRow[]>;
+  /**
+   * Atomically flip a still-orphaned row to review_required. MUST re-assert the
+   * guard (status still processing/waiting AND checkout_request_id still NULL) so
+   * a callback that landed in the meantime wins. Returns true iff this call moved it.
+   */
+  markReview: (id: string, patch: Record<string, unknown>) => Promise<boolean>;
+  recordEvent: (event: Record<string, unknown>) => Promise<unknown>;
+  writeAuditEvent?: (event: Record<string, unknown>) => Promise<unknown>;
+  now?: () => Date;
+};
+
+export type OrphanSweepReport = {
+  scanned: number;
+  surfacedForReview: number;
+  racedOrAlreadyMoved: number;
+};
+
+export async function surfaceUnmatchableOrphans(
+  deps: OrphanSweepDeps,
+  config: { stuckAfterMinutes: number },
+): Promise<OrphanSweepReport> {
+  const now = (deps.now ?? (() => new Date()))();
+  const cutoff = new Date(now.getTime() - config.stuckAfterMinutes * 60_000);
+  const rows = await deps.fetchOrphans(cutoff.toISOString());
+  const report: OrphanSweepReport = {
+    scanned: rows.length,
+    surfacedForReview: 0,
+    racedOrAlreadyMoved: 0,
+  };
+
+  for (const row of rows) {
+    // Defence in depth: never touch a row that already reached a terminal status.
+    if (TERMINAL_STATUSES.has(String(row.status))) {
+      report.racedOrAlreadyMoved += 1;
+      continue;
+    }
+
+    const moved = await deps.markReview(row.id, {
+      status: 'review_required',
+      result_code: 'ORPHAN_UNMATCHABLE',
+      result_desc: 'reconciliation_orphan_unmatchable',
+      updated_at: now.toISOString(),
+    });
+    if (!moved) {
+      // A callback re-linked it (or another sweep moved it) between fetch and update.
+      report.racedOrAlreadyMoved += 1;
+      continue;
+    }
+    report.surfacedForReview += 1;
+
+    await deps.recordEvent({
+      pending_payment_id: row.id,
+      external_reference: row.correlation_ref || row.tx_ref,
+      provider_status:    'orphan_unmatchable',
+      internal_status:    'review_required',
+      amount_match:       null,
+      phone_match:        null,
+      requires_manual_review: true,
+      raw_provider_payload_hash: '',
+      event_type:         'orphan_recovery_required',
+      reason:             'no checkout_request_id on the pending row; surfaced for manual review instead of silent timeout',
+    });
+    await deps.writeAuditEvent?.({
+      event_type:     'webhook.orphan_recovered',
+      event_category: 'financial',
+      severity:       'critical',
+      target_type:    'pending_payments',
+      target_id:      row.id,
+      action:         'surface_unmatchable_orphan_for_review',
+      outcome:        'pending',
+      payload:        {
+        tx_ref:          row.tx_ref,
+        correlation_ref: row.correlation_ref ?? null,
+        amount:          row.amount,
+        age_minutes:     ageInMinutes(row, now),
+      },
+      correlation_id: row.tx_ref,
+    });
+  }
+
+  return report;
 }

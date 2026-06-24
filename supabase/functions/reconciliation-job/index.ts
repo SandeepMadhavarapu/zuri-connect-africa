@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { isDarajaQueryConfigured } from '../_shared/payment-env.ts';
 import {
   sweepStuckPendingPayments,
+  surfaceUnmatchableOrphans,
   type StuckRow,
   type ProviderQueryResult,
 } from '../_shared/stuck-payments.ts';
@@ -106,6 +107,56 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ── MED-3 unmatchable-orphan surfacing ───────────────────────────────────
+    // Runs BEFORE sweepStuckPendingPayments. Stuck rows with NULL
+    // checkout_request_id cannot be provider-queried (the provider-query sweep
+    // above deliberately skips them) and must NOT be silently timed out by the
+    // generic sweep below — that would mask a possible real M-Pesa debit. Surface
+    // each into manual review with a webhook.orphan_recovered audit event; once
+    // surfaced (review_required) the generic sweep no longer sees them.
+    const orphanReport = await surfaceUnmatchableOrphans(
+      {
+        fetchOrphans: async (cutoffIso) => {
+          const { data, error } = await supabaseAdmin
+            .from('pending_payments')
+            .select('id, tx_ref, user_id, status, amount, from_phone, to_phone, correlation_ref, checkout_request_id, updated_at, created_at')
+            .in('status', ['processing', 'waiting_for_mpesa'])
+            .is('checkout_request_id', null)
+            .lt('updated_at', cutoffIso)
+            .limit(200);
+          if (error) throw new Error(error.message);
+          return (data ?? []) as StuckRow[];
+        },
+        markReview: async (id, patch) => {
+          // Re-assert the orphan guard so a callback that re-linked the row in the
+          // meantime (status moved, or checkout_request_id now set) wins the race.
+          const { data, error } = await supabaseAdmin
+            .from('pending_payments')
+            .update(patch)
+            .eq('id', id)
+            .in('status', ['processing', 'waiting_for_mpesa'])
+            .is('checkout_request_id', null)
+            .select('id');
+          if (error) throw new Error(error.message);
+          return Array.isArray(data) && data.length > 0;
+        },
+        recordEvent: async (event) => {
+          const { error } = await supabaseAdmin.from('payment_reconciliation_events').insert(event);
+          if (error) console.error('[reconciliation-job] orphan event insert failed', error);
+        },
+        writeAuditEvent: async (event) => {
+          const { error } = await supabaseAdmin.from('audit_events').insert({
+            ...event,
+            actor_id:   userRes.user.id,
+            actor_type: 'service',
+            payload_hash: '',
+          });
+          if (error) console.error('[reconciliation-job] orphan audit insert failed', error);
+        },
+      },
+      { stuckAfterMinutes: stuckMinutes },
+    );
+
     const queryProviderStatus = providerQueryConfigured
       ? async (_row: StuckRow): Promise<ProviderQueryResult> => ({ ok: true, outcome: 'still_pending' })
       : undefined;
@@ -175,6 +226,7 @@ Deno.serve(async (req) => {
         result: ledgerData,
         stuck_payments: report,
         provider_query: providerQueryApplied,
+        unmatchable_orphans: orphanReport,
         chama_obligation_reset: chamaObligationReset,
       },
       { headers: corsHeaders },
@@ -216,6 +268,9 @@ async function runProviderQuerySweep({
     .select('id, tx_ref, user_id, status, amount, from_phone, to_phone, checkout_request_id, merchant_request_id, updated_at, ledger_posted_at')
     .in('status', ['processing', 'waiting_for_mpesa'])
     .lt('updated_at', cutoff)
+    // Provider query needs a CheckoutRequestID; rows with NULL checkout_request_id
+    // are not dropped — they are handled by surfaceUnmatchableOrphans (MED-3),
+    // which routes them to manual review instead of letting them silently time out.
     .not('checkout_request_id', 'is', null)
     .limit(50);
   if (fetchErr) {

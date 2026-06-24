@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
 
   const { data: pending, error: pendingErr } = await supabaseAdmin
     .from('pending_payments')
-    .select('id, tx_ref, user_id, status, amount, from_phone, to_phone, payment_type, description, idempotency_key, metadata')
+    .select('id, tx_ref, user_id, status, amount, from_phone, to_phone, payment_type, description, idempotency_key, metadata, correlation_ref')
     .eq('id', pendingPaymentId)
     .eq('user_id', userId)
     .maybeSingle();
@@ -350,7 +350,10 @@ Deno.serve(async (req) => {
   const metadata = typeof pending.metadata === 'object' && pending.metadata !== null
     ? pending.metadata as Record<string, unknown>
     : {};
-  const accountReference = String(metadata.account_reference || pending.tx_ref);
+  // MED-3: prefer the server-generated correlation_ref (set at initiate-payment,
+  // before the original STK call) so the resumed STK push echoes a key we can
+  // re-link an orphaned callback on. Fall back for pre-migration rows.
+  const accountReference = String(pending.correlation_ref || metadata.account_reference || pending.tx_ref);
 
   try {
     const stk = await requestDarajaStkPush({

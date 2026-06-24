@@ -4,6 +4,7 @@ import {
   callbackIdempotencyKey,
   callbackStatus,
   finalizeDarajaPayment,
+  findPendingPaymentByCallback,
   parseDarajaStkCallback,
 } from '../_shared/payment-lifecycle.ts';
 import {
@@ -156,24 +157,32 @@ async function writeAuditEvent(supabaseAdmin: any, event: Record<string, unknown
   if (error) console.error('[webhook-handler] audit insert failed', error);
 }
 
-async function findPendingPayment(supabaseAdmin: any, checkoutRequestId: string, merchantRequestId: string | null) {
-  let query = supabaseAdmin
-    .from('pending_payments')
-    .select('*')
-    .eq('checkout_request_id', checkoutRequestId)
-    .limit(1);
-  let { data, error } = await query.maybeSingle();
-  if (error) throw new Error(error.message);
-  if (data || !merchantRequestId) return data;
-
-  ({ data, error } = await supabaseAdmin
-    .from('pending_payments')
-    .select('*')
-    .eq('merchant_request_id', merchantRequestId)
-    .limit(1)
-    .maybeSingle());
-  if (error) throw new Error(error.message);
-  return data;
+async function findPendingPayment(
+  supabaseAdmin: any,
+  checkoutRequestId: string,
+  merchantRequestId: string | null,
+  accountReference: string | null,
+) {
+  const lookup = async (column: string, value: string) => {
+    const { data, error } = await supabaseAdmin
+      .from('pending_payments')
+      .select('*')
+      .eq(column, value)
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ?? null;
+  };
+  // checkout_request_id / merchant_request_id arms run first (happy path
+  // unchanged); correlation_ref is the MED-3 orphan-recovery fallback.
+  return findPendingPaymentByCallback(
+    {
+      byCheckoutRequestId: (id)  => lookup('checkout_request_id', id),
+      byMerchantRequestId: (id)  => lookup('merchant_request_id', id),
+      byCorrelationRef:    (ref) => lookup('correlation_ref', ref),
+    },
+    { checkoutRequestId, merchantRequestId, accountReference },
+  );
 }
 
 async function recordPaymentReconciliationEvent(
@@ -385,7 +394,7 @@ Deno.serve(async (req) => {
       .eq('idempotency_key', idempotencyKey)
       .maybeSingle();
     if (existingEvent) {
-      const duplicatePending = await findPendingPayment(supabaseAdmin, callback.checkoutRequestId, callback.merchantRequestId);
+      const duplicatePending = await findPendingPayment(supabaseAdmin, callback.checkoutRequestId, callback.merchantRequestId, callback.accountReference);
       if (duplicatePending) {
         await recordPaymentReconciliationEvent(supabaseAdmin, {
           pending_payment_id: duplicatePending.id,
@@ -429,7 +438,7 @@ Deno.serve(async (req) => {
       throw new Error(eventInsertError.message);
     }
 
-    const pending = await findPendingPayment(supabaseAdmin, callback.checkoutRequestId, callback.merchantRequestId);
+    const pending = await findPendingPayment(supabaseAdmin, callback.checkoutRequestId, callback.merchantRequestId, callback.accountReference);
     if (!pending) {
       await supabaseAdmin
         .from('webhook_events')
@@ -446,6 +455,7 @@ Deno.serve(async (req) => {
         payload: {
           checkout_request_id: callback.checkoutRequestId,
           merchant_request_id: callback.merchantRequestId,
+          account_reference: callback.accountReference,
           payload_hash: payloadHash,
           source_ip: clientIp,
         },

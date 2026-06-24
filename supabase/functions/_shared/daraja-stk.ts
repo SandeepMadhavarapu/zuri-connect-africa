@@ -50,6 +50,12 @@ export async function requestDarajaStkPush({
   callbackUrl: string;
   amount: number;
   fromPhone: string;
+  /**
+   * Daraja STK Push AccountReference (≤12 chars, echoed back in the callback).
+   * Callers MUST pass the pending row's server-generated `correlation_ref` so an
+   * orphaned callback stays re-linkable (MED-3) — NOT the user-facing biller
+   * account reference, which is preserved in pending_payments.metadata.
+   */
   accountReference: string;
   transactionDesc: string;
 }): Promise<StkPushResult> {

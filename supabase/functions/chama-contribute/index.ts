@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { requestDarajaStkPush } from '../_shared/daraja-stk.ts';
-import { normalizePhone } from '../_shared/payment-lifecycle.ts';
+import { normalizePhone, generateCorrelationRef } from '../_shared/payment-lifecycle.ts';
 import { requireFunctionEnv, serviceNotConfiguredResponse } from '../_shared/function-env.ts';
 import { checkRateLimit } from '../_shared/rate-limit.ts';
 
@@ -246,6 +246,10 @@ Deno.serve(async (req) => {
 
   // ── 10. Build tx_ref ─────────────────────────────────────────────────────
   const txRef = `CC-${obligationId.slice(0, 8)}-${Date.now()}`;
+  // MED-3: server-generated correlation key persisted on the row (below) BEFORE
+  // the STK push and sent as AccountReference, so an orphaned chama callback is
+  // re-linkable via correlation_ref even if checkout_request_id is never written.
+  const correlationRef = generateCorrelationRef();
 
   // ── 11. Insert pending_payments ──────────────────────────────────────────
   // buildPendingPaymentRecord from payment-lifecycle cannot be used here: it
@@ -262,6 +266,7 @@ Deno.serve(async (req) => {
     from_phone:      normalizedFromPhone,
     to_phone:        `CHAMA:${groupId}`,
     description:     `Chama contribution ${groupId}`,
+    correlation_ref: correlationRef,
     metadata: {
       obligation_id:       obligationId,
       group_id:            groupId,
@@ -342,7 +347,7 @@ Deno.serve(async (req) => {
       callbackUrl,
       amount:           amountKes,
       fromPhone:        normalizedFromPhone,
-      accountReference: txRef,
+      accountReference: correlationRef,
       transactionDesc:  `ZuriChama ${txRef.slice(0, 8)}`,
     });
 

@@ -193,7 +193,7 @@ describe('webhook-handler: chama FAILED callback resets the obligation, no RPC',
 describe('webhook-handler: chama duplicates caught by shared webhook_events de-dup', () => {
   it('the existing-event de-dup + webhook_events insert run before findPendingPayment resolves the branch', () => {
     const dedupIdx = code.indexOf('existingEvent');
-    const resolveIdx = code.lastIndexOf('findPendingPayment(supabaseAdmin, callback.checkoutRequestId, callback.merchantRequestId)');
+    const resolveIdx = code.lastIndexOf('findPendingPayment(supabaseAdmin, callback.checkoutRequestId, callback.merchantRequestId, callback.accountReference)');
     const branchIdx = code.indexOf("payment_type === 'chama_contribution'");
     expect(dedupIdx).toBeGreaterThan(-1);
     expect(dedupIdx).toBeLessThan(resolveIdx);

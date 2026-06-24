@@ -389,7 +389,10 @@ Deno.serve(async (req) => {
       callbackUrl,
       amount: Number(pendingRecord.amount),
       fromPhone: normalizedFromPhone,
-      accountReference: String((pendingRecord.metadata as Record<string, unknown>)?.account_reference || pendingRecord.tx_ref),
+      // MED-3: send the server-generated correlation key (persisted on the row at
+      // INSERT above, BEFORE this network call) as AccountReference so an orphaned
+      // callback stays re-linkable. The biller account_reference stays in metadata.
+      accountReference: pendingRecord.correlation_ref,
       transactionDesc: `ZuriConnect ${pendingRecord.tx_ref.slice(0, 8)}`,
     });
 
