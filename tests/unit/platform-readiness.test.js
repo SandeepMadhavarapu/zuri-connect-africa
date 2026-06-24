@@ -254,13 +254,20 @@ describe('pitch honesty · forbidden overclaim phrases', () => {
 // ── 5. Existing honest disclaimers must remain present ───────────────────────
 
 describe('pitch honesty · disclaimers remain wired', () => {
-  it('Home.jsx still surfaces the service-directory preview banner', () => {
+  // The "Explore Services" PayBill directory (EcosystemGrid) and its
+  // "Service directory preview — verified provider source" banner were removed
+  // from the Home surface together. That disclaimer only ever existed to keep the
+  // grid honest while it was rendered, so with the grid gone the banner is
+  // correctly absent — re-asserting its presence would force back dead/dishonest
+  // copy. This regression instead guarantees the grid cannot silently return to
+  // Home without its honesty banner: Home must surface neither.
+  it('Home.jsx ships neither the PayBill directory grid nor a dangling preview banner', () => {
     const text = stripJsComments(read('src/pages/Home.jsx'));
-    expect(text).toMatch(/Service directory preview/i);
-    expect(text).toMatch(/verified provider source/i);
+    expect(text, 'EcosystemGrid (PayBill directory) must not be rendered on the Home surface')
+      .not.toMatch(/<EcosystemGrid\b/);
+    expect(text, 'a "Service directory preview" banner must not linger on Home without the grid it disclaims')
+      .not.toMatch(/Service directory preview/i);
   });
-
-
 });
 
 // ── 6. /platform route is wired and framed honestly ──────────────────────────
