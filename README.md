@@ -16,7 +16,7 @@
 
 Zuri Connect Africa is a Safaricom/M-PESA-style mobile money platform I built to go deep on production-grade fintech engineering — the parts that are hard to get right when real money moves: an immutable ledger, idempotent payments, fraud detection, and secure authentication.
 
-It spans a React + TypeScript frontend and a Supabase backend of **14 Edge Functions** and **30+ versioned SQL migrations**, covering M-PESA payment initiation, Daraja webhook handling, settlement recovery, biometric auth, fraud analysis, and admin reconciliation.
+It spans a React + TypeScript frontend and a Supabase backend of **17 Edge Functions** and **37 versioned SQL migrations**, covering M-PESA payment initiation, Daraja webhook handling, settlement recovery, biometric auth, fraud analysis, and admin reconciliation.
 
 > **Status:** Active development. The architecture follows production patterns, but the platform is **not deployed to move real money** — it runs against placeholder/staging credentials.
 
@@ -25,7 +25,7 @@ It spans a React + TypeScript frontend and a Supabase backend of **14 Edge Funct
 ## Key Features
 
 ### Payments & Ledger
-- **Server-authoritative payments** across 14 Supabase Edge Functions — STK Push initiation, Daraja webhook validation, settlement recovery, admin reconciliation
+- **Server-authoritative payments** across 17 Supabase Edge Functions — STK Push initiation, Daraja webhook validation, settlement recovery, admin reconciliation
 - **Immutable double-entry ledger** with **SHA-256 hash-chained entries** for tamper detection
 - **Idempotency keys** and **atomic Postgres RPC posting** to prevent double-charges and duplicate webhook processing
 - **Local-first durability** with non-blocking server sync — survives flaky mobile connectivity
@@ -131,7 +131,7 @@ The browser CSP intentionally blocks direct connections to OpenAI, Anthropic, Ge
 
 The frontend lives in `src/` — with `api/` (typed API client layer), `backend/` (server-side domain logic for fraud, the OPA/Cedar-style policy engine, reconciliation, and Daraja webhook handling with a dead-letter queue), `lib/` (core libraries including the multi-provider AI orchestrator, observability, and the voice-verification engine), `services/` (auth, ledger, payment, and fraud service layers), `pages/` (application screens), and `components/` (reusable UI).
 
-The backend lives in `supabase/` — with `functions/` (14 Edge Functions) and `migrations/` (30+ versioned SQL migrations).
+The backend lives in `supabase/` — with `functions/` (17 Edge Functions) and `migrations/` (37 versioned SQL migrations).
 
 ---
 
